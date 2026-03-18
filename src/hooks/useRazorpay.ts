@@ -101,7 +101,7 @@ export function useRazorpay() {
     customerId,
     onSuccess,
     onFailure,
-    amount = 449,
+    amount = 299,
     currency = "INR",
     description = "Soulmate Sketch Reading",
     companyName = "Soulmate Sketch",

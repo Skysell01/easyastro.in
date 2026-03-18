@@ -680,7 +680,7 @@ const Checkout = () => {
           email,
           name,
           phone,
-          amount: 449,
+          amount: 299,
           quizResponses,
           sessionId,
         }),
@@ -1116,7 +1116,7 @@ const Checkout = () => {
               onClick={scrollToForm}
             >
               <ChevronUp className="w-4 h-4 mr-2" />
-              Complete Order — ₹449
+              Complete Order — ₹299
             </Button>
           </motion.div>
         )}
