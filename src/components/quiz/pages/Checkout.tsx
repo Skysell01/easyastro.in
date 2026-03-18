@@ -758,7 +758,7 @@ const Checkout = () => {
                   <span className="px-2 py-1 rounded-full bg-coral/20 text-coral text-xs font-semibold">75% OFF</span>
                 </div>
                 <div className="text-4xl md:text-5xl font-serif font-bold text-coral mb-3">
-                  ₹449
+                  ₹299
                 </div>
                 <p className="text-sm text-coral font-medium mb-4">
                   🎉 Limited time offer — Today only
