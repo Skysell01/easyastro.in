@@ -864,7 +864,7 @@ const Checkout = () => {
                         Opening Payment…
                       </span>
                     ) : (
-                      "Pay ₹449 & Get Report"
+                      "Pay ₹299 & Get Report"
                     )}
                   </Button>
                 </motion.div>
