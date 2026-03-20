@@ -1261,7 +1261,7 @@ export default function CartPage() {
       if (abdOrderId) console.log("MongoDB Abandoned Order ID:", abdOrderId);
 
       // ── 2. Supabase: insert abandoned order (independent) ───
-      const { error: abdSupabaseError } = await supabase
+      const { error: abdSupabaseError } = await ordersSupabase
         .from("abandoned_orders")
         .insert({
           full_name: form.fullName,
@@ -1328,7 +1328,7 @@ export default function CartPage() {
               sessionStorage.setItem("orderAmount", finalAmount.toString());
 
               // ── 4b. Supabase: insert confirmed order (independent) ──
-              const { error: orderSupabaseError } = await supabase
+              const { error: orderSupabaseError } = await ordersSupabase
                 .from("orders")
                 .insert({
                   razorpay_order_id: response.razorpay_order_id,
