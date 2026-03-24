@@ -45,7 +45,7 @@ export default function HeroSection() {
             </h1>
             <div className="lg:hidden my-8">
               <Image
-                src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2003_59_24%20PM.png"
+                src="/hero-image.png"
                 alt="Soulmate Sketch Example"
                 width={500}
                 height={500}
@@ -74,7 +74,7 @@ export default function HeroSection() {
 
           <div className="hidden lg:block">
             <Image
-              src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2003_59_24%20PM.png"
+              src="/hero-image.png"
               alt="Soulmate Sketch Example"
               width={500}
               height={500}

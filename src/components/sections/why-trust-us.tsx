@@ -31,7 +31,7 @@ export default function WhyTrustUsSection() {
           </div>
           <div className="order-1 lg:order-2 flex justify-center">
             <Image
-              src="https://ik.imagekit.io/5r36kvobl/Untitled%20design.png"
+              src="/trust-image.png"
               alt="Beautiful soulmate sketch"
               width={500}
               height={500}

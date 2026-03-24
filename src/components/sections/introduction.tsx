@@ -11,7 +11,7 @@ export default function IntroductionSection() {
           </h2>
           <div className="lg:hidden my-8">
             <Image
-              src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2002_54_36%20PM.png"
+              src="/hero-image-2.png"
               alt="Artistic representation of destiny and connection"
               width={500}
               height={500}
@@ -31,7 +31,7 @@ export default function IntroductionSection() {
         </div>
         <div className="hidden lg:flex justify-center">
             <Image
-              src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2002_54_36%20PM.png"
+              src="/hero-image-2.png"
               alt="Artistic representation of destiny and connection"
               width={500}
               height={500}

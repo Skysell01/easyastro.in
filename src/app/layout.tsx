@@ -19,7 +19,7 @@ const belleza = Belleza({
 });
 
 export const metadata: Metadata = {
-  title: "Easy Astro",
+  title: "Soulmap",
   description:
     "Discover your soulmate's face today with a personalized sketch from our gifted psychics.",
 };
