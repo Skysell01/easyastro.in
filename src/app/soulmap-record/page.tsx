@@ -169,8 +169,6 @@ export default function RecordPage() {
       PlaceOfBirth: o.place_of_birth,
       AdditionalProducts: (o.additional_products || []).join(", "),
       Amount: o.amount,
-      RazorpayOrderId: o.razorpay_order_id || "",
-      RazorpayPaymentId: o.razorpay_payment_id || "",
       OrderDate: formatDateTime(o.created_at),
     }));
 
