@@ -26,3 +26,14 @@ export const cartSupabase = createClient(
     },
   }
 );
+export const tamilSupabase = createClient(
+  process.env.NEXT_PUBLIC_TAMIL_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_TAMIL_SUPABASE_ANON_KEY!,
+  {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+      detectSessionInUrl: false,
+    },
+  }
+);
