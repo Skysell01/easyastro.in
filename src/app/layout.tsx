@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./styles/index.css"
+import "./styles/App.css"
 import { Toaster } from "@/components/ui/toaster";
 import { Alegreya, Belleza } from "next/font/google";
 import Script from "next/script";
