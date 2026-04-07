@@ -45,7 +45,7 @@ export default function OrderConfirmationClient() {
 
         const data = await res.json();
 
-        if (data?.status === "PAID") {
+        if (data?.status === "SUCCESS") {
           setOrderStatus("success");
           localStorage.removeItem("pendingOrderId");
         } else {

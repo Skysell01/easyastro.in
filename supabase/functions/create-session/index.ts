@@ -38,16 +38,17 @@ serve(async (req) => {
         "x-api-version": "2022-09-01",
       },
       body: JSON.stringify({
+         order_id: orderId,
         order_amount: amount,
         order_currency: "INR",
         customer_details: {
-          customer_id: phoneNumber,
+           customer_id: `cust_${phoneNumber}_${Date.now()}`,
           customer_name: fullName,
           customer_email: email,
           customer_phone: phoneNumber,
         },
        order_meta: {
-  return_url: `${url}?order_id={order_id}`,
+ return_url: `${url}?order_id=${orderId}`,
 },
       }),
     });
@@ -66,7 +67,7 @@ serve(async (req) => {
         success: true,
         data: {
           payment_session_id: data.payment_session_id,
-          order_id: data.order_id,
+         order_id: orderId,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }

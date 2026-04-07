@@ -264,27 +264,20 @@ const createPaymentSession = async () => {
       return product?.title;
     }).filter(Boolean);
 
-    const payload = {
-  amount: finalAmount > 0 ? finalAmount : total, // 🔥 fallback fix
-
+   const payload = {
+  amount: finalAmount > 0 ? finalAmount : total,
   fullName: consultationFormData.name?.trim() || "Guest User",
-
-  email:
-    consultationFormData.email?.trim() ||
-    `guest${Date.now()}@gmail.com`,
-
-  phoneNumber:
-    consultationFormData.phoneNumber?.replace(/\D/g, "") ||
-    "9999999999",
-
+  email: consultationFormData.email?.trim() || `guest${Date.now()}@gmail.com`,
+  phoneNumber: consultationFormData.phoneNumber?.replace(/\D/g, "") || "9999999999",
   additional_products: additionalProductsData || [],
   product_name: "Soulmate Sketch",
-
-  url: `${window.location.origin}/order-confirmation-cashfree`,
+  url: `${window.location.origin}/order-confirmation-cashfree`, // ✅ keep as is
 };
 
-    // ✅ Save BEFORE payment (used later in confirmation page)
-    localStorage.setItem("orderData", JSON.stringify(payload));
+// ✅ Save BEFORE payment
+localStorage.setItem("orderData", JSON.stringify(payload));
+
+  
 
     const res = await fetch(`${FUNCTIONS_URL}/create-session`, {
       method: "POST",
