@@ -265,13 +265,19 @@ const createPaymentSession = async () => {
     }).filter(Boolean);
 
     const payload = {
-  amount: finalAmount,
+  amount: finalAmount > 0 ? finalAmount : total, // 🔥 fallback fix
 
   fullName: consultationFormData.name?.trim() || "Guest User",
-  email: consultationFormData.email?.trim() || `guest${Date.now()}@gmail.com`,
-  phoneNumber: consultationFormData.phoneNumber?.replace(/\D/g, "") || "9999999999",
 
-  additional_products: additionalProductsData,
+  email:
+    consultationFormData.email?.trim() ||
+    `guest${Date.now()}@gmail.com`,
+
+  phoneNumber:
+    consultationFormData.phoneNumber?.replace(/\D/g, "") ||
+    "9999999999",
+
+  additional_products: additionalProductsData || [],
   product_name: "Soulmate Sketch",
 
   url: `${window.location.origin}/order-confirmation-cashfree`,
