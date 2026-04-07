@@ -37,7 +37,7 @@ export default function OrderConfirmationClient() {
           return;
         }
 
-        const res = await fetch(`/api/verify-payment`, {
+        const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ orderId }),
@@ -89,7 +89,7 @@ export default function OrderConfirmationClient() {
             </button>
 
             <button
-              onClick={() => router.push("/cart")}
+              onClick={() => router.push("/cart-cashfree")}
               className="w-full px-6 py-3 rounded-lg border border-gray-300"
             >
               Back to Cart
