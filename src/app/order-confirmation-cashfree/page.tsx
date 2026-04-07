@@ -1,6 +1,7 @@
 "use client";
 
 export const dynamic = "force-dynamic";
+
 import { useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 
@@ -14,21 +15,23 @@ export default function OrderConfirmation() {
   const router = useRouter();
 
   useEffect(() => {
-    verifyPayment();
-  }, []);
+    // Wait for searchParams hydration
+    if (searchParams) {
+      verifyPayment();
+    }
+  }, [searchParams]);
 
   const verifyPayment = async () => {
     try {
-      // ✅ GET ORDER ID FROM URL (MOST IMPORTANT FIX)
       const orderId = searchParams.get("order_id");
 
-      const orderData = JSON.parse(
-        localStorage.getItem("orderData") || "{}"
-      );
-
-      if (!orderId) {
-        return handleFailure();
+      // Prevent undefined localStorage on server
+      let orderData = {};
+      if (typeof window !== "undefined") {
+        orderData = JSON.parse(localStorage.getItem("orderData") || "{}");
       }
+
+      if (!orderId) return handleFailure();
 
       const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
         method: "POST",
@@ -45,7 +48,6 @@ export default function OrderConfirmation() {
 
       console.log("VERIFY RESPONSE:", data);
 
-      // ✅ FIX: check BOTH conditions
       if (
         data.payment_status === "SUCCESS" ||
         data.order_status === "PAID"
@@ -60,14 +62,14 @@ export default function OrderConfirmation() {
         });
 
         // cleanup
-        localStorage.removeItem("pendingOrderId");
-
+        if (typeof window !== "undefined") {
+          localStorage.removeItem("pendingOrderId");
+        }
       } else {
         handleFailure();
       }
-
-    } catch (err) {
-      console.error(err);
+    } catch (error) {
+      console.error(error);
       handleFailure();
     }
   };
@@ -77,16 +79,20 @@ export default function OrderConfirmation() {
     router.push("/cart-cashfree");
   };
 
-  // ⏳ LOADING
+  // ----------------------------------------
+  // 🔄 Loading State
+  // ----------------------------------------
   if (status === "verifying") {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <h2>Verifying payment...</h2>
+        <h2 className="text-lg font-semibold">Verifying payment...</h2>
       </div>
     );
   }
 
-  // ✅ SUCCESS UI
+  // ----------------------------------------
+  // 🎉 Success UI
+  // ----------------------------------------
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white shadow-lg rounded-xl p-8 max-w-md w-full text-center space-y-4">
@@ -108,8 +114,8 @@ export default function OrderConfirmation() {
             <strong>Additional Products:</strong>
             {orderDetails?.additionalProducts?.length > 0 ? (
               <ul className="list-disc ml-5">
-                {orderDetails.additionalProducts.map((p, i) => (
-                  <li key={i}>{p}</li>
+                {orderDetails.additionalProducts.map((item, index) => (
+                  <li key={index}>{item}</li>
                 ))}
               </ul>
             ) : (
