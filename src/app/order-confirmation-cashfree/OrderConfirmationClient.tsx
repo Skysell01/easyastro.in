@@ -2,17 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, Loader2 } from "lucide-react";
 
 const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
 
-// ✅ Receive orderId as prop — no useSearchParams at all
 export default function OrderConfirmationClient({ orderId: paramOrderId }: { orderId: string }) {
   const router = useRouter();
 
-  const [orderStatus, setOrderStatus] = useState<"verifying" | "success" | "failed">("verifying");
-  const [retryCount, setRetryCount] = useState(0);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [status, setStatus] = useState<"verifying" | "success" | "failed">("verifying");
   const [orderId, setOrderId] = useState("");
   const [amount, setAmount] = useState(0);
 
@@ -23,104 +20,87 @@ export default function OrderConfirmationClient({ orderId: paramOrderId }: { ord
 
     const orderData = localStorage.getItem("orderData");
     if (orderData) {
-      const parsed = JSON.parse(orderData);
-      setAmount(parsed?.amount || 0);
+      try {
+        const parsed = JSON.parse(orderData);
+        setAmount(parsed?.amount || 0);
+      } catch {}
     }
   }, [paramOrderId]);
 
   useEffect(() => {
     if (!orderId) return;
+    verify();
+  }, [orderId]);
 
-    async function verifyPayment() {
-      try {
-        const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ orderId }),
-        });
+  async function verify() {
+    try {
+      setStatus("verifying");
 
-        const data = await res.json();
-        console.log("Verify response:", data);
+      const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orderId }),
+      });
 
-        if (data?.payment_status === "SUCCESS") {
-          setOrderStatus("success");
-          localStorage.removeItem("pendingOrderId");
-        } else if (data?.payment_status === "PENDING") {
-          setOrderStatus("failed");
-          setErrorMessage("Payment is still processing. Please retry.");
-        } else {
-          setOrderStatus("failed");
-          setErrorMessage("Payment not completed. Try again.");
-        }
-      } catch (err) {
-        setOrderStatus("failed");
-        setErrorMessage("Verification failed. Try again.");
+      const data = await res.json();
+      console.log("Verify response:", data);
+
+      if (data?.payment_status === "SUCCESS") {
+        setStatus("success");
+        localStorage.removeItem("pendingOrderId");
+        localStorage.removeItem("orderData");
+      } else {
+        // ❌ Failed or Pending → redirect to cart with failure flag
+        localStorage.setItem("paymentFailed", "true");
+        router.replace("/cart-cashfree");
       }
+    } catch (err) {
+      localStorage.setItem("paymentFailed", "true");
+      router.replace("/cart-cashfree");
     }
+  }
 
-    verifyPayment();
-  }, [orderId, retryCount]);
-
-  if (orderStatus === "verifying") {
+  // VERIFYING UI
+  if (status === "verifying") {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-white">
         <Loader2 className="w-12 h-12 animate-spin text-amber-500" />
-        <p className="text-gray-600">Verifying your payment...</p>
+        <p className="text-gray-600 text-lg">Verifying your payment...</p>
+        <p className="text-gray-400 text-sm">Please don't close this page</p>
       </div>
     );
   }
 
-  if (orderStatus === "failed") {
-    return (
-      <div className="min-h-screen flex items-center justify-center text-center">
-        <div className="max-w-md space-y-5">
-          <AlertCircle className="w-16 h-16 mx-auto text-red-500" />
-          <h2 className="text-2xl font-bold">Payment Failed</h2>
-          <p className="text-gray-600">{errorMessage}</p>
-          <div className="flex flex-col gap-3 mt-5">
-            <button
-              onClick={() => setRetryCount((x) => x + 1)}
-              className="w-full px-6 py-3 bg-amber-500 hover:bg-amber-600 text-white rounded-lg"
-            >
-              Retry Verification
-            </button>
-            <button
-              onClick={() => router.push("/cart-cashfree")}
-              className="w-full px-6 py-3 rounded-lg border border-gray-300"
-            >
-              Back to Cart
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // SUCCESS UI
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 px-4">
-      <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
-      <h1 className="text-3xl font-bold mt-4">Payment Successful 🎉</h1>
-      <p className="text-gray-600 mt-2">Your order is confirmed.</p>
-      <div className="bg-white p-6 mt-8 w-full max-w-md rounded-xl shadow">
-        <div className="flex justify-between">
-          <span className="text-gray-500">Order ID</span>
-          <span className="text-gray-800 font-medium">{orderId}</span>
+      <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
+        <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
+        <h1 className="text-3xl font-bold text-gray-800">Payment Successful 🎉</h1>
+        <p className="text-gray-500 mt-2 mb-6">Your order is confirmed.</p>
+
+        <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-left">
+          <div className="flex justify-between">
+            <span className="text-gray-500">Order ID</span>
+            <span className="text-gray-800 font-medium text-sm">{orderId}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Amount</span>
+            <span className="text-gray-800 font-medium">₹{amount}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-gray-500">Status</span>
+            <span className="text-green-600 font-semibold">Paid ✓</span>
+          </div>
         </div>
-        <div className="flex justify-between mt-3">
-          <span className="text-gray-500">Amount</span>
-          <span className="text-gray-800 font-medium">₹{amount}</span>
-        </div>
-        <div className="flex justify-between mt-3">
-          <span className="text-gray-500">Status</span>
-          <span className="text-green-600 font-semibold">Paid ✓</span>
-        </div>
+
+        <button
+          onClick={() => router.push("/")}
+          className="mt-6 w-full px-8 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium transition"
+        >
+          Back to Home
+        </button>
       </div>
-      <button
-        onClick={() => router.push("/")}
-        className="mt-6 px-8 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600"
-      >
-        Back to Home
-      </button>
     </div>
   );
 }
