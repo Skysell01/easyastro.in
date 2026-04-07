@@ -20,15 +20,13 @@ interface Order {
   place_of_birth: string;
   additional_products: string[];
   amount: number;
-  razorpay_order_id: string | null;
-  razorpay_payment_id: string | null;
-  razorpay_signature: string | null;
-  status: string;
+  cashfree_order_id: string | null;
+  payment_session_id: string | null;
+  payment_status: string;
 }
 
 type FilterType = "all" | "today" | "yesterday" | "last7days" | "custom";
-type StatusFilter = "all" | "success" | "abandoned";
-
+type StatusFilter = "all" | "success" | "pending" | "failed";
 
 const PAGE_LIMIT = 50;
 
@@ -49,7 +47,6 @@ export default function RecordPage() {
     fetchOrders();
   }, []);
 
- 
   // ─── Fetch all orders from Supabase ───────────────────────────────────────
   const fetchOrders = async () => {
     try {
@@ -65,7 +62,6 @@ export default function RecordPage() {
         setError("Failed to fetch orders: " + supabaseError.message);
         return;
       }
-    
 
       setOrders(data || []);
       setTotalCount(count || 0);
@@ -75,9 +71,10 @@ export default function RecordPage() {
       setLoading(false);
     }
   };
-    useEffect(() => {
-  applyFilters();
-}, [orders, filter, customStart, customEnd, statusFilter]);
+
+  useEffect(() => {
+    applyFilters();
+  }, [orders, filter, customStart, customEnd, statusFilter]);
 
   // ─── Filters ──────────────────────────────────────────────────────────────
   const isWithin = (date: Date, from: Date, to: Date) =>
@@ -91,16 +88,14 @@ export default function RecordPage() {
     switch (filter) {
       case "today":
         filtered = filtered.filter(
-          (o) =>
-            new Date(o.created_at).toDateString() === now.toDateString()
+          (o) => new Date(o.created_at).toDateString() === now.toDateString()
         );
         break;
       case "yesterday":
         const y = new Date();
         y.setDate(y.getDate() - 1);
         filtered = filtered.filter(
-          (o) =>
-            new Date(o.created_at).toDateString() === y.toDateString()
+          (o) => new Date(o.created_at).toDateString() === y.toDateString()
         );
         break;
       case "last7days":
@@ -123,11 +118,10 @@ export default function RecordPage() {
 
     // Status filter
     if (statusFilter !== "all") {
-      filtered = filtered.filter((o) => o.status === statusFilter);
+      filtered = filtered.filter((o) => o.payment_status === statusFilter);
     }
 
-    // Project filter
-   
+    // Sort by latest
     filtered.sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -146,7 +140,7 @@ export default function RecordPage() {
     (Date.now() - new Date(created_at).getTime()) / (1000 * 60) < 60;
 
   const totalAmount = filteredOrders
-    .filter((o) => o.status === "success")
+    .filter((o) => o.payment_status === "success")
     .reduce((sum, o) => sum + o.amount, 0);
 
   // ─── Pagination ───────────────────────────────────────────────────────────
@@ -160,7 +154,7 @@ export default function RecordPage() {
   const exportToCSV = () => {
     const csvData = filteredOrders.map((o) => ({
       Project: o.project_name,
-      Status: o.status,
+      Status: o.payment_status,
       Name: o.full_name,
       Email: o.email,
       Phone: o.phone_number,
@@ -169,6 +163,8 @@ export default function RecordPage() {
       PlaceOfBirth: o.place_of_birth,
       AdditionalProducts: (o.additional_products || []).join(", "),
       Amount: o.amount,
+      CashfreeOrderID: o.cashfree_order_id || "—",
+      PaymentSessionID: o.payment_session_id || "—",
       OrderDate: formatDateTime(o.created_at),
     }));
 
@@ -196,11 +192,8 @@ export default function RecordPage() {
               </span>
             </h1>
             <p className="text-muted-foreground max-w-2xl mx-auto">
-              Total Orders:{" "}
-              <span className="font-semibold">{totalCount}</span>
-              {" · "}
-              Showing:{" "}
-              <span className="font-semibold">{filteredOrders.length}</span>
+              Total Orders: <span className="font-semibold">{totalCount}</span> ·
+              Showing: <span className="font-semibold">{filteredOrders.length}</span>
               {totalPages > 1 && (
                 <span className="ml-2 text-muted-foreground/80">
                   (Page {currentPage} of {totalPages})
@@ -211,7 +204,6 @@ export default function RecordPage() {
 
           {/* Filters row */}
           <div className="mb-4 flex flex-wrap gap-3 justify-between items-center">
-            {/* Date filters */}
             <div className="flex gap-2 flex-wrap">
               {(["all", "today", "yesterday", "last7days", "custom"] as FilterType[]).map(
                 (f) => (
@@ -243,11 +235,10 @@ export default function RecordPage() {
             </button>
           </div>
 
-          {/* Status + Project filters */}
+          {/* Status Filter */}
           <div className="mb-4 flex flex-wrap gap-3 items-center">
-            {/* Status filter */}
             <div className="flex gap-2 flex-wrap">
-              {(["all", "success", "abandoned"] as StatusFilter[]).map((s) => (
+              {(["all", "success", "pending", "failed"] as StatusFilter[]).map((s) => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
@@ -256,7 +247,9 @@ export default function RecordPage() {
                     statusFilter === s
                       ? s === "success"
                         ? "bg-green-600 text-white border-green-600"
-                        : s === "abandoned"
+                        : s === "pending"
+                        ? "bg-yellow-500 text-white border-yellow-500"
+                        : s === "failed"
                         ? "bg-red-500 text-white border-red-500"
                         : "bg-primary text-white border-primary"
                       : "bg-muted text-foreground border-border"
@@ -267,10 +260,6 @@ export default function RecordPage() {
               ))}
             </div>
 
-            {/* Project filter */}
-           
-
-            {/* Refresh button */}
             <button
               onClick={fetchOrders}
               className="ml-auto px-3 py-1 rounded-full border border-border text-sm bg-muted hover:bg-muted/70 transition"
@@ -320,7 +309,6 @@ export default function RecordPage() {
                       <thead>
                         <tr className="bg-muted/50 border-b border-border">
                           <th className="px-4 py-3 text-left font-medium">Project</th>
-                          <th className="px-4 py-3 text-left font-medium">Status</th>
                           <th className="px-4 py-3 text-left font-medium">Name</th>
                           <th className="px-4 py-3 text-left font-medium">Email</th>
                           <th className="px-4 py-3 text-left font-medium">Phone</th>
@@ -329,6 +317,9 @@ export default function RecordPage() {
                           <th className="px-4 py-3 text-left font-medium">Place of Birth</th>
                           <th className="px-4 py-3 text-left font-medium">Additional Products</th>
                           <th className="px-4 py-3 text-left font-medium">Amount</th>
+                          <th className="px-4 py-3 text-left font-medium">Cashfree Order ID</th>
+                          <th className="px-4 py-3 text-left font-medium">Payment Session ID</th>
+                          <th className="px-4 py-3 text-left font-medium">Payment Status</th>
                           <th className="px-4 py-3 text-left font-medium">Order Date</th>
                         </tr>
                       </thead>
@@ -343,7 +334,6 @@ export default function RecordPage() {
                                 : "hover:bg-muted/30"
                             )}
                           >
-                            {/* Project */}
                             <td className="px-4 py-3">
                               <span
                                 className={clsx(
@@ -357,70 +347,43 @@ export default function RecordPage() {
                               </span>
                             </td>
 
-                            {/* Status */}
-                            <td className="px-4 py-3">
-                              <span
-                                className={clsx(
-                                  "px-2 py-1 rounded-full text-xs font-semibold capitalize",
-                                  order.status === "success"
-                                    ? "bg-green-100 text-green-700"
-                                    : "bg-red-100 text-red-600"
-                                )}
-                              >
-                                {order.status}
-                              </span>
-                            </td>
-
                             <td className="px-4 py-3 font-medium">{order.full_name}</td>
                             <td className="px-4 py-3">{order.email}</td>
                             <td className="px-4 py-3">{order.phone_number}</td>
                             <td className="px-4 py-3 capitalize">{order.gender}</td>
                             <td className="px-4 py-3">{formatDate(order.date_of_birth)}</td>
                             <td className="px-4 py-3">{order.place_of_birth}</td>
-
-                            {/* Additional products */}
                             <td className="px-4 py-3">
-                              <div className="flex flex-wrap gap-1">
-                                {(order.additional_products || []).length > 0 ? (
-                                  order.additional_products.map((product, i) => (
+                              {(order.additional_products || []).length > 0 ? (
+                                <div className="flex flex-wrap gap-1">
+                                  {order.additional_products.map((product, i) => (
                                     <span
                                       key={i}
                                       className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
                                     >
                                       {product}
                                     </span>
-                                  ))
-                                ) : (
-                                  <span className="text-muted-foreground text-xs">None</span>
-                                )}
-                              </div>
+                                  ))}
+                                </div>
+                              ) : (
+                                <span className="text-muted-foreground text-xs">None</span>
+                              )}
                             </td>
-
-                            <td className="px-4 py-3 font-semibold text-primary">
-                              ₹{order.amount}
-                            </td>
-
-                            {/* Razorpay Payment ID */}
-                            <td className="px-4 py-3 text-xs text-muted-foreground">
-                              {order.razorpay_payment_id || "—"}
-                            </td>
-
-                            <td className="px-4 py-3 text-muted-foreground">
-                              {formatDateTime(order.created_at)}
-                            </td>
+                            <td className="px-4 py-3 font-semibold text-primary">₹{order.amount}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{order.cashfree_order_id || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">{order.payment_session_id || "—"}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground capitalize">{order.payment_status || "—"}</td>
+                            <td className="px-4 py-3 text-muted-foreground">{formatDateTime(order.created_at)}</td>
                           </tr>
                         ))}
                       </tbody>
 
-                      {/* Total row — success orders only */}
                       {filteredOrders.length > 0 && (
                         <tfoot>
                           <tr className="bg-muted/50 border-t border-border font-semibold">
-                            <td colSpan={9} className="px-4 py-3 text-right">
-                              Total (success orders)
-                            </td>
+                            <td colSpan={8} className="px-4 py-3 text-right">Total (success orders)</td>
                             <td className="px-4 py-3 text-primary">₹{totalAmount}</td>
-                            <td colSpan={2}></td>
+                            <td colSpan={4}></td>
                           </tr>
                         </tfoot>
                       )}
@@ -440,20 +403,14 @@ export default function RecordPage() {
                         </span>
                         <div className="flex gap-2">
                           <button
-                            onClick={() =>
-                              setCurrentPage((p) => Math.max(1, p - 1))
-                            }
+                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                             disabled={currentPage <= 1 || loading}
                             className="px-3 py-1.5 rounded border border-border text-sm font-medium disabled:opacity-50 hover:bg-muted transition"
                           >
                             Previous
                           </button>
                           <button
-                            onClick={() =>
-                              setCurrentPage((p) =>
-                                Math.min(totalPages, p + 1)
-                              )
-                            }
+                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                             disabled={currentPage >= totalPages || loading}
                             className="px-3 py-1.5 rounded border border-border text-sm font-medium disabled:opacity-50 hover:bg-muted transition"
                           >
@@ -473,4 +430,3 @@ export default function RecordPage() {
     </div>
   );
 }
-

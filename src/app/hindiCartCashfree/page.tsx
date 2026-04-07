@@ -1,0 +1,1 @@
+import { ordersSupabase } from "@/components/hindi-supabase/integration/supabase/client";
