@@ -258,55 +258,62 @@ const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 };
 const createPaymentSession = async () => {
   try {
-    // 🔥 Map additional product titles (IMPORTANT)
-    const additionalProductsData = selectedProducts.map((id) => {
-      const product = mockAdditionalProducts.find((p) => p.id === id);
-      return product?.title;
-    }).filter(Boolean);
+    // 🔥 Map additional product titles
+    const additionalProductsData = selectedProducts
+      .map((id) => {
+        const product = mockAdditionalProducts.find((p) => p.id === id);
+        return product?.title;
+      })
+      .filter(Boolean);
 
-   const payload = {
-  order_id: orderId, // ✅ SAME ID
-  amount: orderData.amount,
-  fullName: orderData.full_name,
-  email: orderData.email,
-  phoneNumber: orderData.phone_number,
-  additional_products: additionalProductsData,
-  product_name: "Soulmate Sketch",
-  url: `${window.location.origin}/order-confirmation-testing`,
-};
+    // ✅ STEP 1: Create orderId FIRST
+    const orderId = "order_" + Date.now();
 
-// ✅ Save BEFORE payment
-localStorage.setItem("orderData", JSON.stringify(payload));
+    // ✅ STEP 2: Create orderData
+    const orderData = {
+      project_name: "Soulmate Sketch",
+      full_name: consultationFormData.name || "Guest User",
+      email:
+        consultationFormData.email || `guest${Date.now()}@gmail.com`,
+      phone_number:
+        consultationFormData.phoneNumber || "9999999999",
+      date_of_birth: consultationFormData.dateOfBirth,
+      place_of_birth: consultationFormData.placeOfBirth,
+      gender: consultationFormData.gender,
+      amount: finalAmount > 0 ? finalAmount : total,
+      additional_products: additionalProductsData,
+      cashfree_order_id: orderId,
+      payment_status: "pending",
+    };
 
+    // ✅ STEP 3: Insert into Supabase
+    const { error } = await cartSupabase
+      .from("soulmate_orders")
+      .insert(orderData);
 
-const orderId = "order_" + Date.now();
+    if (error) {
+      console.error("Supabase insert error:", error);
+      alert("Failed to save order");
+      return null;
+    }
 
+    // ✅ STEP 4: Create payload AFTER orderData
+    const payload = {
+      order_id: orderId,
+      amount: orderData.amount,
+      fullName: orderData.full_name,
+      email: orderData.email,
+      phoneNumber: orderData.phone_number,
+      additional_products: additionalProductsData,
+      product_name: "Soulmate Sketch",
+      url: `${window.location.origin}/order-confirmation-testing`,
+    };
 
+    // ✅ Save locally
+    localStorage.setItem("orderData", JSON.stringify(payload));
+    localStorage.setItem("pendingOrderId", orderId);
 
-const orderData = {
-  project_name: "Soulmate Sketch",
-  full_name: consultationFormData.name || "Guest User",
-  email: consultationFormData.email || `guest${Date.now()}@gmail.com`,
-  phone_number: consultationFormData.phoneNumber || "9999999999",
-  date_of_birth: consultationFormData.dateOfBirth,
-  place_of_birth: consultationFormData.placeOfBirth,
-  gender: consultationFormData.gender,
-  amount: finalAmount > 0 ? finalAmount : total,
-  additional_products: additionalProductsData,
-  cashfree_order_id: orderId,
-  payment_status: "pending",
-};
-
-// 🔥 INSERT INTO SUPABASE
-const { error } = await cartSupabase
-  .from("soulmate_orders")
-  .insert(orderData);
-
-if (error) {
-  console.error("Supabase insert error:", error);
-}
-  
-
+    // ✅ STEP 5: Call backend
     const res = await fetch(`${FUNCTIONS_URL}/create-session`, {
       method: "POST",
       headers: {
@@ -318,15 +325,13 @@ if (error) {
 
     const data = await res.json();
 
-    if (!data.success) throw new Error("Session failed");
-
-    // ✅ Save order_id for verification
-    localStorage.setItem("pendingOrderId", data.data.order_id);
+    if (!data.success) {
+      throw new Error("Session failed");
+    }
 
     return data.data.payment_session_id;
-
   } catch (err) {
-    console.error(err);
+    console.error("Create session error:", err);
     alert("Failed to create session");
     return null;
   }
