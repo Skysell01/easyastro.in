@@ -8,6 +8,39 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
 };
 
+// 🔁 POLLING FUNCTION — waits up to 8 seconds for Cashfree to return "PAID"
+async function pollCashfreeStatus(orderId: string, appId: string, secret: string) {
+  for (let attempt = 0; attempt < 6; attempt++) {
+    const res = await fetch(`https://api.cashfree.com/pg/orders/${orderId}`, {
+      method: "GET",
+      headers: {
+        "x-client-id": appId,
+        "x-client-secret": secret,
+        "x-api-version": "2022-09-01",
+      },
+    });
+
+    const data = await res.json();
+    console.log("Cashfree Poll Attempt:", attempt + 1, data);
+
+    // ❇️ SUCCESS — Cashfree confirmed payment
+    if (data.order_status === "PAID") {
+      return { status: "SUCCESS", raw: data };
+    }
+
+    // ❌ Failed instantly → stop
+    if (data.order_status === "EXPIRED" || data.order_status === "FAILED") {
+      return { status: "FAILED", raw: data };
+    }
+
+    // Still PROCESSING → wait and retry
+    await new Promise((r) => setTimeout(r, 1500));
+  }
+
+  // If after all attempts still not paid → treat as pending
+  return { status: "PENDING", raw: null };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -15,7 +48,6 @@ serve(async (req) => {
 
   try {
     const body = await req.json();
-
     const { orderId, ...orderData } = body;
 
     if (!orderId) {
@@ -28,40 +60,29 @@ serve(async (req) => {
     const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
     const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
 
-    // 🔥 Fetch order from Cashfree
-    const response = await fetch(
-      `https://api.cashfree.com/pg/orders/${orderId}`,
-      {
-        method: "GET",
-        headers: {
-          "x-client-id": CASHFREE_APP_ID!,
-          "x-client-secret": CASHFREE_SECRET_KEY!,
-          "x-api-version": "2022-09-01",
-        },
-      }
-    );
-
-    const data = await response.json();
-
-    const orderStatus = data.order_status;
-
-    // ✅ Handle all cases properly
-    let paymentStatus = "FAILED";
-
-    if (orderStatus === "PAID") {
-      paymentStatus = "SUCCESS";
-    } else if (orderStatus === "ACTIVE") {
-      paymentStatus = "PENDING";
-    } else if (orderStatus === "EXPIRED") {
-      paymentStatus = "FAILED";
+    if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Cashfree credentials missing in environment",
+        }),
+        { status: 500, headers: corsHeaders }
+      );
     }
+
+    // 🔁 Poll Cashfree until we get a final payment result
+    const result = await pollCashfreeStatus(
+      orderId,
+      CASHFREE_APP_ID,
+      CASHFREE_SECRET_KEY
+    );
 
     return new Response(
       JSON.stringify({
         success: true,
-        payment_status: paymentStatus,
-        order_status: orderStatus,
-        data,
+        payment_status: result.status,
+        order_status: result.raw?.order_status || "UNKNOWN",
+        data: result.raw,
       }),
       {
         headers: {
@@ -70,14 +91,13 @@ serve(async (req) => {
         },
       }
     );
-
   } catch (err: any) {
     console.error("Verify payment error:", err);
 
     return new Response(
       JSON.stringify({
         success: false,
-        error: err.message,
+        error: err.message || "Unknown error",
       }),
       {
         status: 500,
