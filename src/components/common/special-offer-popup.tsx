@@ -65,7 +65,7 @@ export default function SpecialOfferPopup({ isOpen, onClose }: SpecialOfferPopup
 
   const handleGetSoulmateSketch = () => {
     onClose();
-    router.push('/cart');
+    router.push('/cart-cashfree');
   };
 
   useEffect(() => {

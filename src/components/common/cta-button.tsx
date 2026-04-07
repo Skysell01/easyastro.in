@@ -16,7 +16,7 @@ export default function CtaButton({ isCartPage = false }: CtaButtonProps) {
 
     const handleRedirect = () => {
         scrollToTop();
-        router.push('/cart');
+        router.push('/cart-cashfree');
     };
 
     return (
