@@ -9,7 +9,6 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // ✅ Handle CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
@@ -28,28 +27,41 @@ serve(async (req) => {
     const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
     const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
 
+    if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: "Cashfree credentials missing",
+        }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    // ✅ GENERATE YOUR ORDER ID HERE (the missing part)
+    const orderId = `order_${Date.now()}`;
+
     // 🔥 Create Cashfree Order
     const response = await fetch("https://api.cashfree.com/pg/orders", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-client-id": CASHFREE_APP_ID!,
-        "x-client-secret": CASHFREE_SECRET_KEY!,
+        "x-client-id": CASHFREE_APP_ID,
+        "x-client-secret": CASHFREE_SECRET_KEY,
         "x-api-version": "2022-09-01",
       },
       body: JSON.stringify({
-         order_id: orderId,
+        order_id: orderId,
         order_amount: amount,
         order_currency: "INR",
         customer_details: {
-           customer_id: `cust_${phoneNumber}_${Date.now()}`,
+          customer_id: `cust_${phoneNumber}_${Date.now()}`,
           customer_name: fullName,
           customer_email: email,
           customer_phone: phoneNumber,
         },
-       order_meta: {
- return_url: `${url}?order_id=${orderId}`,
-},
+        order_meta: {
+          return_url: `${url}?order_id=${orderId}`,
+        },
       }),
     });
 
@@ -67,7 +79,7 @@ serve(async (req) => {
         success: true,
         data: {
           payment_session_id: data.payment_session_id,
-         order_id: orderId,
+          order_id: orderId, // ✅ NOW VALID
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
