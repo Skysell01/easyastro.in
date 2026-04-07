@@ -6,7 +6,7 @@ import CartContent from "@/components/cart/cart-content";
 import { useState, useEffect } from "react";
 import TestimonialsSection from "@/components/sections/testimonials";
 import GallerySection from "@/components/sections/gallery";
-import { BACKEND_URL } from "@/lib/backendUrl";
+
 import { useRouter } from "next/navigation";
 import { cartSupabase } from "@/components/hindi-supabase/integration/supabase/client";
 import { load } from "@cashfreepayments/cashfree-js";
@@ -292,7 +292,7 @@ const createPaymentSession = async () => {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_CART_SUPABASE_ANON_KEY}`,
       },
       body: JSON.stringify(payload),
     });

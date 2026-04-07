@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState } from "react";
 
-const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL;
+
+const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 export default function OrderConfirmation() {
   const [status, setStatus] = useState("verifying");
