@@ -137,8 +137,21 @@ const [sdkReady, setSdkReady] = useState(false);
   }, []);
 
   useEffect(() => {
-  console.log("Cart page opened");
-}, []);
+    const logPath = async () => {
+      try {
+        const indianTime = new Date().toLocaleString("en-IN", {
+          timeZone: "Asia/Kolkata",
+        });
+       await cartSupabase.from("logs").insert({
+  path: "cart",
+  timestamp: new Date().toISOString(),
+});
+      } catch (error) {
+        console.error("Error logging path:", error);
+      }
+    };
+    logPath();
+  }, []);
 
   const loadScript = (src: string) => {
     return new Promise((resolve) => {
