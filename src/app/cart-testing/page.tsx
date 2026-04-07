@@ -17,7 +17,7 @@ const mockCartItems = [
     id: "1",
     name: "Soulmate Sketch",
     description: "Get a detailed sketch of your soulmate's face",
-    price: 199,
+    price: 1,
     originalPrice: 1999,
     features: [
       "Detailed facial features",
@@ -265,18 +265,46 @@ const createPaymentSession = async () => {
     }).filter(Boolean);
 
    const payload = {
-  amount: finalAmount > 0 ? finalAmount : total,
-  fullName: consultationFormData.name?.trim() || "Guest User",
-  email: consultationFormData.email?.trim() || `guest${Date.now()}@gmail.com`,
-  phoneNumber: consultationFormData.phoneNumber?.replace(/\D/g, "") || "9999999999",
-  additional_products: additionalProductsData || [],
+  order_id: orderId, // ✅ SAME ID
+  amount: orderData.amount,
+  fullName: orderData.full_name,
+  email: orderData.email,
+  phoneNumber: orderData.phone_number,
+  additional_products: additionalProductsData,
   product_name: "Soulmate Sketch",
-  url: `${window.location.origin}/order-confirmation-cashfree`, // ✅ keep as is
+  url: `${window.location.origin}/order-confirmation-testing`,
 };
 
 // ✅ Save BEFORE payment
 localStorage.setItem("orderData", JSON.stringify(payload));
 
+
+const orderId = "order_" + Date.now();
+
+
+
+const orderData = {
+  project_name: "Soulmate Sketch",
+  full_name: consultationFormData.name || "Guest User",
+  email: consultationFormData.email || `guest${Date.now()}@gmail.com`,
+  phone_number: consultationFormData.phoneNumber || "9999999999",
+  date_of_birth: consultationFormData.dateOfBirth,
+  place_of_birth: consultationFormData.placeOfBirth,
+  gender: consultationFormData.gender,
+  amount: finalAmount > 0 ? finalAmount : total,
+  additional_products: additionalProductsData,
+  cashfree_order_id: orderId,
+  payment_status: "pending",
+};
+
+// 🔥 INSERT INTO SUPABASE
+const { error } = await cartSupabase
+  .from("soulmate_orders")
+  .insert(orderData);
+
+if (error) {
+  console.error("Supabase insert error:", error);
+}
   
 
     const res = await fetch(`${FUNCTIONS_URL}/create-session`, {
@@ -337,9 +365,3 @@ localStorage.setItem("orderData", JSON.stringify(payload));
     </div>
   );
 }
-
-
-
-
-
-
