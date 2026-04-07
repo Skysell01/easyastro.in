@@ -62,7 +62,7 @@ export default function OrderConfirmation() {
 
   const handleFailure = () => {
     alert("❌ Payment Failed. Please try again.");
-    window.location.href = "/cart"; // 🔥 redirect back
+    window.location.href = "/cart-cashfree"; // 🔥 redirect back
   };
 
   // 🔄 Loading state

@@ -92,6 +92,7 @@ export default function CartPage() {
   const [finalAmount, setFinalAmount] = useState(0);
   const [cashfree, setCashfree] = useState<any>(null);
 const [sdkReady, setSdkReady] = useState(false);
+const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
   // ─── Totals ───────────────────────────────────────────────────────────────
   const subtotal = cartItems.reduce((sum, item) => sum + item.price, 0);
@@ -264,26 +265,17 @@ const createPaymentSession = async () => {
     }).filter(Boolean);
 
     const payload = {
-      amount: finalAmount,
+  amount: finalAmount,
 
-      // ✅ Match DB column names
-      full_name:
-        consultationFormData.name?.trim() || "Guest User",
+  fullName: consultationFormData.name?.trim() || "Guest User",
+  email: consultationFormData.email?.trim() || `guest${Date.now()}@gmail.com`,
+  phoneNumber: consultationFormData.phoneNumber?.replace(/\D/g, "") || "9999999999",
 
-      email:
-        consultationFormData.email?.trim() ||
-        `guest${Date.now()}@gmail.com`,
+  additional_products: additionalProductsData,
+  product_name: "Soulmate Sketch",
 
-      phone_number:
-        consultationFormData.phoneNumber?.replace(/\D/g, "") ||
-        "9999999999",
-
-      // ✅ Add missing fields
-      additional_products: additionalProductsData,
-      product_name: "Soulmate Sketch",
-
-      url: `${window.location.origin}/order-confirmation-cashfree`,
-    };
+  url: `${window.location.origin}/order-confirmation-cashfree`,
+};
 
     // ✅ Save BEFORE payment (used later in confirmation page)
     localStorage.setItem("orderData", JSON.stringify(payload));
