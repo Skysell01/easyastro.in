@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 
 const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
 
-export default function OrderConfirmationClient() {
-  const searchParams = useSearchParams();
+// ✅ Receive orderId as prop — no useSearchParams at all
+export default function OrderConfirmationClient({ orderId: paramOrderId }: { orderId: string }) {
   const router = useRouter();
 
   const [orderStatus, setOrderStatus] = useState<"verifying" | "success" | "failed">("verifying");
@@ -16,9 +16,7 @@ export default function OrderConfirmationClient() {
   const [orderId, setOrderId] = useState("");
   const [amount, setAmount] = useState(0);
 
-  // ✅ Read localStorage inside useEffect to avoid SSR issues
   useEffect(() => {
-    const paramOrderId = searchParams.get("order_id");
     const storedOrderId = localStorage.getItem("pendingOrderId");
     const resolvedOrderId = paramOrderId || storedOrderId || "";
     setOrderId(resolvedOrderId);
@@ -28,19 +26,13 @@ export default function OrderConfirmationClient() {
       const parsed = JSON.parse(orderData);
       setAmount(parsed?.amount || 0);
     }
-  }, []);
+  }, [paramOrderId]);
 
   useEffect(() => {
-    if (!orderId) return; // wait until orderId is set
+    if (!orderId) return;
 
     async function verifyPayment() {
       try {
-        if (!orderId) {
-          setOrderStatus("failed");
-          setErrorMessage("Order ID not found.");
-          return;
-        }
-
         const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -48,16 +40,14 @@ export default function OrderConfirmationClient() {
         });
 
         const data = await res.json();
+        console.log("Verify response:", data);
 
-        console.log("Verify response:", data); // helpful for debugging
-
-        // ✅ Fixed: was data?.status, now data?.payment_status
         if (data?.payment_status === "SUCCESS") {
           setOrderStatus("success");
           localStorage.removeItem("pendingOrderId");
         } else if (data?.payment_status === "PENDING") {
           setOrderStatus("failed");
-          setErrorMessage("Payment is still processing. Please retry in a moment.");
+          setErrorMessage("Payment is still processing. Please retry.");
         } else {
           setOrderStatus("failed");
           setErrorMessage("Payment not completed. Try again.");
@@ -71,7 +61,6 @@ export default function OrderConfirmationClient() {
     verifyPayment();
   }, [orderId, retryCount]);
 
-  // LOADING UI
   if (orderStatus === "verifying") {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
@@ -81,7 +70,6 @@ export default function OrderConfirmationClient() {
     );
   }
 
-  // FAILED UI
   if (orderStatus === "failed") {
     return (
       <div className="min-h-screen flex items-center justify-center text-center">
@@ -108,7 +96,6 @@ export default function OrderConfirmationClient() {
     );
   }
 
-  // SUCCESS UI
   return (
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 px-4">
       <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
