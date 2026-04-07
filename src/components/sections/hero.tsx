@@ -32,7 +32,7 @@ const stats = [
 export default function HeroSection() {
    const router = useRouter();
   const handleRedirect = () => {
-    router.push('/cart');
+    router.push('/cart-cashfree');
   };
   return (
     <section className="relative overflow-hidden pt-2 pb-7 sm:py-16 bg-card">
