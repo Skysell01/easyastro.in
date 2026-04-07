@@ -9,18 +9,26 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // ✅ Handle CORS
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    const { orderId } = await req.json();
+    const body = await req.json();
+
+    const { orderId, ...orderData } = body;
+
+    if (!orderId) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing orderId" }),
+        { status: 400, headers: corsHeaders }
+      );
+    }
 
     const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
     const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
 
-    // 🔥 Fetch order details from Cashfree
+    // 🔥 Fetch order from Cashfree
     const response = await fetch(
       `https://api.cashfree.com/pg/orders/${orderId}`,
       {
@@ -35,17 +43,31 @@ serve(async (req) => {
 
     const data = await response.json();
 
-    const isPaid = data.order_status === "PAID";
+    const orderStatus = data.order_status;
+
+    // ✅ Handle all cases properly
+    let paymentStatus = "FAILED";
+
+    if (orderStatus === "PAID") {
+      paymentStatus = "SUCCESS";
+    } else if (orderStatus === "ACTIVE") {
+      paymentStatus = "PENDING";
+    } else if (orderStatus === "EXPIRED") {
+      paymentStatus = "FAILED";
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
-        payment_status: isPaid ? "SUCCESS" : "FAILED",
-        order_status: data.order_status,
+        payment_status: paymentStatus,
+        order_status: orderStatus,
         data,
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: {
+          ...corsHeaders,
+          "Content-Type": "application/json",
+        },
       }
     );
 
@@ -57,7 +79,10 @@ serve(async (req) => {
         success: false,
         error: err.message,
       }),
-      { status: 500, headers: corsHeaders }
+      {
+        status: 500,
+        headers: corsHeaders,
+      }
     );
   }
 });

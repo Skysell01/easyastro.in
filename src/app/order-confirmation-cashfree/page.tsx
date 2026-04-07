@@ -1,12 +1,15 @@
 "use client";
 import { useEffect, useState } from "react";
-
+import { useSearchParams, useRouter } from "next/navigation";
 
 const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL;
 
 export default function OrderConfirmation() {
   const [status, setStatus] = useState("verifying");
-  const [orderDetails, setOrderDetails] = useState<any>(null);
+  const [orderDetails, setOrderDetails] = useState(null);
+
+  const searchParams = useSearchParams();
+  const router = useRouter();
 
   useEffect(() => {
     verifyPayment();
@@ -14,14 +17,15 @@ export default function OrderConfirmation() {
 
   const verifyPayment = async () => {
     try {
-      const orderId = localStorage.getItem("pendingOrderId");
+      // ✅ GET ORDER ID FROM URL (MOST IMPORTANT FIX)
+      const orderId = searchParams.get("order_id");
+
       const orderData = JSON.parse(
         localStorage.getItem("orderData") || "{}"
       );
 
       if (!orderId) {
-        handleFailure();
-        return;
+        return handleFailure();
       }
 
       const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
@@ -31,23 +35,29 @@ export default function OrderConfirmation() {
         },
         body: JSON.stringify({
           orderId,
-          ...orderData, // 🔥 send full data for DB insert
+          ...orderData,
         }),
       });
 
       const data = await res.json();
 
-      if (data.payment_status === "SUCCESS") {
+      console.log("VERIFY RESPONSE:", data);
+
+      // ✅ FIX: check BOTH conditions
+      if (
+        data.payment_status === "SUCCESS" ||
+        data.order_status === "PAID"
+      ) {
         setStatus("success");
 
         setOrderDetails({
           orderId,
           amount: orderData.amount,
-          productName: "Soulmate Sketch", // you can dynamic this
+          productName: orderData.product_name || "Soulmate Sketch",
           additionalProducts: orderData.additional_products || [],
         });
 
-        // ✅ Clean storage
+        // cleanup
         localStorage.removeItem("pendingOrderId");
 
       } else {
@@ -61,11 +71,11 @@ export default function OrderConfirmation() {
   };
 
   const handleFailure = () => {
-    alert("❌ Payment Failed. Please try again.");
-    window.location.href = "/cart-cashfree"; // 🔥 redirect back
+    alert("❌ Payment Failed or Cancelled");
+    router.push("/cart-cashfree");
   };
 
-  // 🔄 Loading state
+  // ⏳ LOADING
   if (status === "verifying") {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -74,7 +84,7 @@ export default function OrderConfirmation() {
     );
   }
 
-  // 🟢 SUCCESS UI
+  // ✅ SUCCESS UI
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="bg-white shadow-lg rounded-xl p-8 max-w-md w-full text-center space-y-4">
@@ -96,7 +106,7 @@ export default function OrderConfirmation() {
             <strong>Additional Products:</strong>
             {orderDetails?.additionalProducts?.length > 0 ? (
               <ul className="list-disc ml-5">
-                {orderDetails.additionalProducts.map((p: string, i: number) => (
+                {orderDetails.additionalProducts.map((p, i) => (
                   <li key={i}>{p}</li>
                 ))}
               </ul>
@@ -107,7 +117,7 @@ export default function OrderConfirmation() {
         </div>
 
         <button
-          onClick={() => (window.location.href = "/")}
+          onClick={() => router.push("/")}
           className="mt-4 w-full bg-green-600 text-white py-2 rounded-lg"
         >
           Go to Home
