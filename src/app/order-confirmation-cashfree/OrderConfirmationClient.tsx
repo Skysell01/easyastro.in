@@ -38,7 +38,10 @@ export default function OrderConfirmationClient({ orderId: paramOrderId }: { ord
 
       const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json" ,
+          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_FUNCTION_SUPABASE_ANON_KEY}`,
+         },
+        
         body: JSON.stringify({ orderId }),
       });
 
