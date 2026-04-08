@@ -23,10 +23,12 @@ interface Order {
   cashfree_order_id: string | null;
   payment_session_id: string | null;
   payment_status: string;
+  status: string;
 }
 
 type FilterType = "all" | "today" | "yesterday" | "last7days" | "custom";
-type StatusFilter = "all" | "success" | "pending" | "failed";
+type StatusFilter = "all" | "paid" | "pending" | "failed";
+type ProjectFilter = "all" | "Hindi Soulmate" | "English Soulmate"; // ✅ NEW
 
 const PAGE_LIMIT = 50;
 
@@ -37,7 +39,7 @@ export default function RecordPage() {
   const [error, setError] = useState<string | null>(null);
   const [filter, setFilter] = useState<FilterType>("all");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
-
+  const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all"); // ✅ NEW
   const [customStart, setCustomStart] = useState<Date | null>(null);
   const [customEnd, setCustomEnd] = useState<Date | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -74,7 +76,7 @@ export default function RecordPage() {
 
   useEffect(() => {
     applyFilters();
-  }, [orders, filter, customStart, customEnd, statusFilter]);
+  }, [orders, filter, customStart, customEnd, statusFilter, projectFilter]); // ✅ added projectFilter
 
   // ─── Filters ──────────────────────────────────────────────────────────────
   const isWithin = (date: Date, from: Date, to: Date) =>
@@ -107,8 +109,10 @@ export default function RecordPage() {
         break;
       case "custom":
         if (customStart && customEnd) {
+          const endOfDay = new Date(customEnd);
+          endOfDay.setHours(23, 59, 59, 999);
           filtered = filtered.filter((o) =>
-            isWithin(new Date(o.created_at), customStart, customEnd)
+            isWithin(new Date(o.created_at), customStart, endOfDay)
           );
         }
         break;
@@ -121,7 +125,11 @@ export default function RecordPage() {
       filtered = filtered.filter((o) => o.payment_status === statusFilter);
     }
 
-    // Sort by latest
+    // ✅ Project filter
+    if (projectFilter !== "all") {
+      filtered = filtered.filter((o) => o.project_name === projectFilter);
+    }
+
     filtered.sort(
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -133,15 +141,27 @@ export default function RecordPage() {
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const formatDate = (d: string) =>
-    d ? new Date(d).toLocaleDateString() : "—";
+    d ? new Date(d).toLocaleDateString("en-IN") : "—";
   const formatDateTime = (d: string) =>
-    d ? new Date(d).toLocaleString() : "—";
+    d
+      ? new Date(d).toLocaleString("en-IN", { timeZone: "Asia/Kolkata" })
+      : "—";
   const isNewOrder = (created_at: string) =>
     (Date.now() - new Date(created_at).getTime()) / (1000 * 60) < 60;
 
   const totalAmount = filteredOrders
-    .filter((o) => o.payment_status === "success")
+    .filter((o) => o.payment_status === "paid")
     .reduce((sum, o) => sum + o.amount, 0);
+
+  const paidCount = filteredOrders.filter(
+    (o) => o.payment_status === "paid"
+  ).length;
+  const pendingCount = filteredOrders.filter(
+    (o) => o.payment_status === "pending"
+  ).length;
+  const failedCount = filteredOrders.filter(
+    (o) => o.payment_status === "failed"
+  ).length;
 
   // ─── Pagination ───────────────────────────────────────────────────────────
   const totalPages = Math.ceil(filteredOrders.length / PAGE_LIMIT);
@@ -184,49 +204,88 @@ export default function RecordPage() {
       <Header />
       <main className="flex-1">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
+            <h1 className="text-3xl md:text-4xl font-bold mb-2">
               <span className="bg-gradient-to-r from-primary via-primary/80 to-primary/60 bg-clip-text text-transparent">
                 Order Records
               </span>
             </h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
-              Total Orders: <span className="font-semibold">{totalCount}</span> ·
-              Showing: <span className="font-semibold">{filteredOrders.length}</span>
+            <p className="text-muted-foreground">
+              Total Orders:{" "}
+              <span className="font-semibold">{totalCount}</span> · Showing:{" "}
+              <span className="font-semibold">{filteredOrders.length}</span>
               {totalPages > 1 && (
-                <span className="ml-2 text-muted-foreground/80">
+                <span className="ml-2">
                   (Page {currentPage} of {totalPages})
                 </span>
               )}
             </p>
           </div>
 
-          {/* Filters row */}
+          {/* Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <Card className="bg-card border-border">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-muted-foreground mb-1">
+                  Total Revenue
+                </p>
+                <p className="text-2xl font-bold text-primary">₹{totalAmount}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-green-50 border-green-200">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-green-600 mb-1">Paid Orders</p>
+                <p className="text-2xl font-bold text-green-700">{paidCount}</p>
+              </CardContent>
+            </Card>
+            <Card className="bg-yellow-50 border-yellow-200">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-yellow-600 mb-1">Pending Orders</p>
+                <p className="text-2xl font-bold text-yellow-700">
+                  {pendingCount}
+                </p>
+              </CardContent>
+            </Card>
+            <Card className="bg-red-50 border-red-200">
+              <CardContent className="p-4 text-center">
+                <p className="text-xs text-red-600 mb-1">Failed Orders</p>
+                <p className="text-2xl font-bold text-red-700">{failedCount}</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Date Filters */}
           <div className="mb-4 flex flex-wrap gap-3 justify-between items-center">
             <div className="flex gap-2 flex-wrap">
-              {(["all", "today", "yesterday", "last7days", "custom"] as FilterType[]).map(
-                (f) => (
-                  <button
-                    key={f}
-                    onClick={() => setFilter(f)}
-                    className={clsx(
-                      "px-3 py-1 rounded-full border text-sm",
-                      filter === f
-                        ? "bg-primary text-white border-primary"
-                        : "bg-muted text-foreground border-border"
-                    )}
-                  >
-                    {f === "all" && "All"}
-                    {f === "today" && "Today"}
-                    {f === "yesterday" && "Yesterday"}
-                    {f === "last7days" && "Last 7 Days"}
-                    {f === "custom" && "Custom Range"}
-                  </button>
-                )
-              )}
+              {(
+                [
+                  "all",
+                  "today",
+                  "yesterday",
+                  "last7days",
+                  "custom",
+                ] as FilterType[]
+              ).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={clsx(
+                    "px-3 py-1 rounded-full border text-sm",
+                    filter === f
+                      ? "bg-primary text-white border-primary"
+                      : "bg-muted text-foreground border-border"
+                  )}
+                >
+                  {f === "all" && "All"}
+                  {f === "today" && "Today"}
+                  {f === "yesterday" && "Yesterday"}
+                  {f === "last7days" && "Last 7 Days"}
+                  {f === "custom" && "Custom Range"}
+                </button>
+              ))}
             </div>
-
             <button
               onClick={exportToCSV}
               className="bg-primary text-white text-sm px-4 py-1.5 rounded-full shadow hover:bg-primary/90 transition"
@@ -235,31 +294,53 @@ export default function RecordPage() {
             </button>
           </div>
 
+          {/* Custom date range */}
+          {filter === "custom" && (
+            <div className="mb-4 flex gap-4 items-center">
+              <input
+                type="date"
+                value={
+                  customStart ? customStart.toISOString().split("T")[0] : ""
+                }
+                onChange={(e) => setCustomStart(new Date(e.target.value))}
+                className="border px-2 py-1 rounded-md text-sm bg-background"
+              />
+              <span className="text-muted-foreground text-sm">to</span>
+              <input
+                type="date"
+                value={customEnd ? customEnd.toISOString().split("T")[0] : ""}
+                onChange={(e) => setCustomEnd(new Date(e.target.value))}
+                className="border px-2 py-1 rounded-md text-sm bg-background"
+              />
+            </div>
+          )}
+
           {/* Status Filter */}
           <div className="mb-4 flex flex-wrap gap-3 items-center">
             <div className="flex gap-2 flex-wrap">
-              {(["all", "success", "pending", "failed"] as StatusFilter[]).map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setStatusFilter(s)}
-                  className={clsx(
-                    "px-3 py-1 rounded-full border text-sm capitalize",
-                    statusFilter === s
-                      ? s === "success"
-                        ? "bg-green-600 text-white border-green-600"
-                        : s === "pending"
-                        ? "bg-yellow-500 text-white border-yellow-500"
-                        : s === "failed"
-                        ? "bg-red-500 text-white border-red-500"
-                        : "bg-primary text-white border-primary"
-                      : "bg-muted text-foreground border-border"
-                  )}
-                >
-                  {s === "all" ? "All Status" : s}
-                </button>
-              ))}
+              {(["all", "paid", "pending", "failed"] as StatusFilter[]).map(
+                (s) => (
+                  <button
+                    key={s}
+                    onClick={() => setStatusFilter(s)}
+                    className={clsx(
+                      "px-3 py-1 rounded-full border text-sm capitalize",
+                      statusFilter === s
+                        ? s === "paid"
+                          ? "bg-green-600 text-white border-green-600"
+                          : s === "pending"
+                          ? "bg-yellow-500 text-white border-yellow-500"
+                          : s === "failed"
+                          ? "bg-red-500 text-white border-red-500"
+                          : "bg-primary text-white border-primary"
+                        : "bg-muted text-foreground border-border"
+                    )}
+                  >
+                    {s === "all" ? "All Status" : s}
+                  </button>
+                )
+              )}
             </div>
-
             <button
               onClick={fetchOrders}
               className="ml-auto px-3 py-1 rounded-full border border-border text-sm bg-muted hover:bg-muted/70 transition"
@@ -268,37 +349,55 @@ export default function RecordPage() {
             </button>
           </div>
 
-          {/* Custom date range */}
-          {filter === "custom" && (
-            <div className="mb-6 flex gap-4 items-center">
-              <input
-                type="date"
-                value={customStart ? customStart.toISOString().split("T")[0] : ""}
-                onChange={(e) => setCustomStart(new Date(e.target.value))}
-                className="border px-2 py-1 rounded-md text-sm text-foreground bg-background"
-              />
-              <input
-                type="date"
-                value={customEnd ? customEnd.toISOString().split("T")[0] : ""}
-                onChange={(e) => setCustomEnd(new Date(e.target.value))}
-                className="border px-2 py-1 rounded-md text-sm text-foreground bg-background"
-              />
+          {/* ✅ Project Filter */}
+          <div className="mb-6 flex flex-wrap gap-3 items-center">
+            <div className="flex gap-2 flex-wrap">
+              {(
+                [
+                  "all",
+                  "Hindi Soulmate",
+                  "English Soulmate",
+                ] as ProjectFilter[]
+              ).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setProjectFilter(p)}
+                  className={clsx(
+                    "px-3 py-1 rounded-full border text-sm",
+                    projectFilter === p
+                      ? p === "Hindi Soulmate"
+                        ? "bg-orange-500 text-white border-orange-500"
+                        : p === "English Soulmate"
+                        ? "bg-pink-500 text-white border-pink-500"
+                        : "bg-primary text-white border-primary"
+                      : "bg-muted text-foreground border-border"
+                  )}
+                >
+                  {p === "all" ? "All Projects" : p}
+                </button>
+              ))}
             </div>
-          )}
+          </div>
 
           {/* Table */}
           <div className="max-w-7xl mx-auto">
             {loading ? (
-              <Card className="bg-card border-border">
+              <Card>
                 <CardContent className="p-8 text-center">
                   <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                   <p className="text-muted-foreground">Loading orders...</p>
                 </CardContent>
               </Card>
             ) : error ? (
-              <Card className="bg-card border-border">
+              <Card>
                 <CardContent className="p-8 text-center">
                   <p className="text-destructive font-medium">{error}</p>
+                  <button
+                    onClick={fetchOrders}
+                    className="mt-4 px-4 py-2 bg-primary text-white rounded-lg text-sm"
+                  >
+                    Try Again
+                  </button>
                 </CardContent>
               </Card>
             ) : (
@@ -315,85 +414,122 @@ export default function RecordPage() {
                           <th className="px-4 py-3 text-left font-medium">Gender</th>
                           <th className="px-4 py-3 text-left font-medium">DOB</th>
                           <th className="px-4 py-3 text-left font-medium">Place of Birth</th>
-                          <th className="px-4 py-3 text-left font-medium">Additional Products</th>
+                          <th className="px-4 py-3 text-left font-medium">Add-ons</th>
                           <th className="px-4 py-3 text-left font-medium">Amount</th>
-                          <th className="px-4 py-3 text-left font-medium">Cashfree Order ID</th>
-                          <th className="px-4 py-3 text-left font-medium">Payment Session ID</th>
+                          <th className="px-4 py-3 text-left font-medium">Order ID</th>
                           <th className="px-4 py-3 text-left font-medium">Payment Status</th>
                           <th className="px-4 py-3 text-left font-medium">Order Date</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {paginatedOrders.map((order) => (
-                          <tr
-                            key={order.id}
-                            className={clsx(
-                              "border-b border-border transition-colors",
-                              isNewOrder(order.created_at)
-                                ? "bg-green-50 hover:bg-green-100"
-                                : "hover:bg-muted/30"
-                            )}
-                          >
-                            <td className="px-4 py-3">
-                              <span
-                                className={clsx(
-                                  "px-2 py-1 rounded-full text-xs font-semibold",
-                                  order.project_name === "soulmate"
-                                    ? "bg-pink-100 text-pink-700"
-                                    : "bg-orange-100 text-orange-700"
-                                )}
-                              >
-                                {order.project_name}
-                              </span>
+                        {paginatedOrders.length === 0 ? (
+                          <tr>
+                            <td
+                              colSpan={12}
+                              className="px-4 py-8 text-center text-muted-foreground"
+                            >
+                              No orders found
                             </td>
-
-                            <td className="px-4 py-3 font-medium">{order.full_name}</td>
-                            <td className="px-4 py-3">{order.email}</td>
-                            <td className="px-4 py-3">{order.phone_number}</td>
-                            <td className="px-4 py-3 capitalize">{order.gender}</td>
-                            <td className="px-4 py-3">{formatDate(order.date_of_birth)}</td>
-                            <td className="px-4 py-3">{order.place_of_birth}</td>
-                            <td className="px-4 py-3">
-                              {(order.additional_products || []).length > 0 ? (
-                                <div className="flex flex-wrap gap-1">
-                                  {order.additional_products.map((product, i) => (
-                                    <span
-                                      key={i}
-                                      className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
-                                    >
-                                      {product}
-                                    </span>
-                                  ))}
-                                </div>
-                              ) : (
-                                <span className="text-muted-foreground text-xs">None</span>
-                              )}
-                            </td>
-                            <td className="px-4 py-3 font-semibold text-primary">₹{order.amount}</td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">{order.cashfree_order_id || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground">{order.payment_session_id || "—"}</td>
-                            <td className="px-4 py-3 text-xs text-muted-foreground capitalize">{order.payment_status || "—"}</td>
-                            <td className="px-4 py-3 text-muted-foreground">{formatDateTime(order.created_at)}</td>
                           </tr>
-                        ))}
+                        ) : (
+                          paginatedOrders.map((order) => (
+                            <tr
+                              key={order.id}
+                              className={clsx(
+                                "border-b border-border transition-colors",
+                                isNewOrder(order.created_at)
+                                  ? "bg-green-50 hover:bg-green-100"
+                                  : "hover:bg-muted/30"
+                              )}
+                            >
+                              <td className="px-4 py-3">
+                                <span
+                                  className={clsx(
+                                    "px-2 py-1 rounded-full text-xs font-semibold",
+                                    order.project_name === "Hindi Soulmate"
+                                      ? "bg-orange-100 text-orange-700"
+                                      : "bg-pink-100 text-pink-700"
+                                  )}
+                                >
+                                  {order.project_name || "—"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 font-medium">
+                                {order.full_name}
+                              </td>
+                              <td className="px-4 py-3">{order.email}</td>
+                              <td className="px-4 py-3">{order.phone_number}</td>
+                              <td className="px-4 py-3 capitalize">
+                                {order.gender || "—"}
+                              </td>
+                              <td className="px-4 py-3">
+                                {formatDate(order.date_of_birth)}
+                              </td>
+                              <td className="px-4 py-3">
+                                {order.place_of_birth || "—"}
+                              </td>
+                              <td className="px-4 py-3">
+                                {(order.additional_products || []).length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {order.additional_products.map(
+                                      (product, i) => (
+                                        <span
+                                          key={i}
+                                          className="px-2 py-1 bg-primary/10 text-primary text-xs rounded-full"
+                                        >
+                                          {product}
+                                        </span>
+                                      )
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground text-xs">
+                                    None
+                                  </span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 font-semibold text-primary">
+                                ₹{order.amount}
+                              </td>
+                              <td className="px-4 py-3 text-xs text-muted-foreground">
+                                {order.cashfree_order_id || "—"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className={clsx(
+                                    "px-2 py-1 rounded-full text-xs font-semibold capitalize",
+                                    order.payment_status === "paid"
+                                      ? "bg-green-100 text-green-700"
+                                      : order.payment_status === "failed"
+                                      ? "bg-red-100 text-red-700"
+                                      : "bg-yellow-100 text-yellow-700"
+                                  )}
+                                >
+                                  {order.payment_status || "pending"}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-muted-foreground text-xs">
+                                {formatDateTime(order.created_at)}
+                              </td>
+                            </tr>
+                          ))
+                        )}
                       </tbody>
 
                       {filteredOrders.length > 0 && (
                         <tfoot>
                           <tr className="bg-muted/50 border-t border-border font-semibold">
-                            <td colSpan={8} className="px-4 py-3 text-right">Total (success orders)</td>
-                            <td className="px-4 py-3 text-primary">₹{totalAmount}</td>
-                            <td colSpan={4}></td>
+                            <td colSpan={8} className="px-4 py-3 text-right">
+                              Total Revenue (paid orders)
+                            </td>
+                            <td className="px-4 py-3 text-primary">
+                              ₹{totalAmount}
+                            </td>
+                            <td colSpan={3}></td>
                           </tr>
                         </tfoot>
                       )}
                     </table>
-
-                    {filteredOrders.length === 0 && (
-                      <div className="p-8 text-center text-muted-foreground">
-                        No orders found
-                      </div>
-                    )}
 
                     {/* Pagination */}
                     {totalPages > 1 && (
@@ -403,14 +539,20 @@ export default function RecordPage() {
                         </span>
                         <div className="flex gap-2">
                           <button
-                            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                            onClick={() =>
+                              setCurrentPage((p) => Math.max(1, p - 1))
+                            }
                             disabled={currentPage <= 1 || loading}
                             className="px-3 py-1.5 rounded border border-border text-sm font-medium disabled:opacity-50 hover:bg-muted transition"
                           >
                             Previous
                           </button>
                           <button
-                            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                            onClick={() =>
+                              setCurrentPage((p) =>
+                                Math.min(totalPages, p + 1)
+                              )
+                            }
                             disabled={currentPage >= totalPages || loading}
                             className="px-3 py-1.5 rounded border border-border text-sm font-medium disabled:opacity-50 hover:bg-muted transition"
                           >
