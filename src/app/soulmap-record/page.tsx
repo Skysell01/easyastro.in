@@ -77,10 +77,14 @@ export default function RecordPage() {
   // ─── Filters ──────────────────────────────────────────────────────────────
   useEffect(() => {
     let filtered = [...orders];
+if (projectFilter !== "all") {
+  filtered = filtered.filter(
+    (o) =>
+      (o.project_name || "").trim().toLowerCase() ===
+      projectFilter.toLowerCase()
+  );
+}
 
-    if (projectFilter !== "all") {
-      filtered = filtered.filter((o) => o.project_name === projectFilter);
-    }
 
     if (search.trim()) {
       const q = search.toLowerCase();
