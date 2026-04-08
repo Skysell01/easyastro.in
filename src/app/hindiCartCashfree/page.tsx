@@ -266,7 +266,7 @@ const createPaymentSession = async () => {
   phoneNumber: consultationFormData.phoneNumber?.replace(/\D/g, "") || "9999999999",
   additional_products: additionalProductsData || [],
   product_name: "Soulmate Sketch",
-  projectName: "English Soulmap",  
+  projectName: "Hindi Soulmap",  
   url: `${window.location.origin}/order-confirmation-cashfree-hindi`, // ✅ keep as is
 };
 

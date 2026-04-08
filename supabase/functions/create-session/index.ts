@@ -228,7 +228,7 @@ serve(async (req) => {
         data: {
           payment_session_id: data.payment_session_id,
           order_id: orderId,
-          language: language || "english",
+        
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
