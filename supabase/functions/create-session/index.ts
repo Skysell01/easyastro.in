@@ -130,7 +130,7 @@ serve(async (req) => {
       email,
       phoneNumber,
       url,
-       projectName       // ✅ NEW
+       projectName,       // ✅ NEW
       dateOfBirth,     // ✅ NEW
       placeOfBirth,    // ✅ NEW
       gender, 
