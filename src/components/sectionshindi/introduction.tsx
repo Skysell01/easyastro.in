@@ -73,10 +73,10 @@ export default function IntroductionSection() {
           {/* Mobile image */}
           <div className="w-full max-w-md lg:hidden">
             <Image
-              src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2002_54_36%20PM.png"
-              alt="भाग्य और जुड़ाव का कलात्मक प्रतिरूप"
-              width={800}
-              height={800}
+              src="/hero-image-2.png"
+              alt="Artistic representation of destiny and connection"
+              width={500}
+              height={500}
               className="mx-auto rounded-3xl border border-white/10 shadow-2xl"
               priority
             />
