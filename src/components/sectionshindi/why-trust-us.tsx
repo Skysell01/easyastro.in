@@ -89,10 +89,10 @@ export default function WhyTrustUsSection() {
               <div className="rounded-3xl border border-white/10 bg-card/80 p-2 shadow-2xl backdrop-blur">
                 <div className="overflow-hidden rounded-2xl">
                   <Image
-                    src="https://ik.imagekit.io/5r36kvobl/Untitled%20design.png"
-                    alt="सुंदर सोलमेट स्केच का उदाहरण"
-                    width={1000}
-                    height={1000}
+                    src="/trust-image.png"
+              alt="Beautiful soulmate sketch"
+              width={500}
+              height={500}
                     className="h-auto w-full object-contain"
                     priority
                   />

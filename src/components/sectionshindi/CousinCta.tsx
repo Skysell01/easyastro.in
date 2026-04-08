@@ -16,7 +16,7 @@ export default function CousinCta({ isCartPage = false }: CousinCtaProps) {
 
     const handleRedirect = () => {
         scrollToTop();
-        router.push('/hindicart');
+        router.push('/hindiCartCashfree');
     };
 
     return (

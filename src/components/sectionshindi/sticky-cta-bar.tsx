@@ -14,7 +14,7 @@ export default function StickyCtaBar() {
   const router = useRouter();
 
   const handleRedirect = () => {
-    router.push('/hindicart');
+    router.push('/hindiCartCashfree');
   };
 
   useEffect(() => {

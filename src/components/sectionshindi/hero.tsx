@@ -21,7 +21,7 @@ export default function HeroSection() {
   const router = useRouter();
 
   const handleRedirect = () => {
-    router.push("/hindicart");
+    router.push("/hindiCartCashfree");
   };
 
   return (
@@ -106,10 +106,10 @@ export default function HeroSection() {
               <div className="rounded-3xl border border-white/10 bg-card/80 p-2 shadow-2xl backdrop-blur">
                 <div className="overflow-hidden rounded-2xl">
                   <Image
-                    src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2003_59_24%20PM.png"
-                    alt="सोलमेट स्केच का उदाहरण"
-                    width={1000}
-                    height={1000}
+                     src="/hero-image.png"
+                alt="Soulmate Sketch Example"
+                width={500}
+                height={500}
                     priority
                     className="h-auto w-full object-cover"
                   />

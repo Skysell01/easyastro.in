@@ -88,10 +88,10 @@ export default function IntroductionSection() {
             <div className="rounded-3xl border border-white/10 bg-card/80 p-2 shadow-2xl backdrop-blur">
               <div className="overflow-hidden rounded-2xl">
                 <Image
-                  src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020,%202025,%2002_54_36%20PM.png"
-                  alt="भाग्य और जुड़ाव का कलात्मक प्रतिरूप"
-                  width={1200}
-                  height={1200}
+                  src="/hero-image-2.png"
+              alt="Artistic representation of destiny and connection"
+              width={500}
+              height={500}
                   className="h-auto w-full object-cover"
                   priority
                 />

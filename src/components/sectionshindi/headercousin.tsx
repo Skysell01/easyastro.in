@@ -28,10 +28,10 @@ export default function Header() {
         {/* tighten vertical space so header isn’t tall */}
         <div className="flex items-center justify-center py-3 sm:py-4">
           <Image
-            src="https://ik.imagekit.io/5r36kvobl/ChatGPT%20Image%20Jul%2020%202025.png"
-            alt="EASY ASTRO"
-            width={240}
-            height={60}
+             src="/images/WhatsApp_Image_2026-03-19_at_3.40.37_PM-removebg-preview.png"
+          alt="Easy Astro Logo"
+          width={200}
+          height={50}
             priority
             className="w-44 sm:w-56 h-auto"
           />
