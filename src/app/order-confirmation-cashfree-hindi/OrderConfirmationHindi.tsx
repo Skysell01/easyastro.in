@@ -81,8 +81,8 @@ export default function OrderConfirmationHindi({ orderId: paramOrderId }: { orde
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
         <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
-        <h1 className="text-3xl font-bold text-gray-800">Payment Successful 🎉</h1>
-        <p className="text-gray-500 mt-2 mb-6">Your order is confirmed.</p>
+        <h1 className="text-3xl font-bold text-gray-800">भुगतान सफल हुआ 🎉</h1>
+        <p className="text-gray-500 mt-2 mb-6">आपका ऑर्डर पुष्टि हो गया है।</p>
 
         <div className="bg-gray-50 rounded-xl p-4 space-y-3 text-left">
           <div className="flex justify-between">
@@ -103,7 +103,7 @@ export default function OrderConfirmationHindi({ orderId: paramOrderId }: { orde
           onClick={() => router.push("/hindi")}
           className="mt-6 w-full px-8 py-3 bg-amber-500 text-white rounded-lg hover:bg-amber-600 font-medium transition"
         >
-          Back to Home
+         होम पर वापस जाएँ
         </button>
       </div>
     </div>
