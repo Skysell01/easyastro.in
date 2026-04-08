@@ -390,15 +390,13 @@ interface Order {
   email: string;
   phone_number: string;
   project_name: string;
-  date_of_birth: string;
-  place_of_birth: string;
-  gender: string;
-  additional_products: string[];
-  payment_status: string; // ✅ added
+  payment_status: string;
   created_at: string;
 }
 
 type ProjectFilter = "all" | "English Soulmap" | "Hindi Soulmap";
+type PaymentFilter = "all" | "SUCCESS" | "PENDING" | "FAILED";
+type DateFilter = "all" | "today" | "yesterday" | "last7days";
 
 const CORRECT_PASSWORD = "arjun@arjun";
 
@@ -409,12 +407,15 @@ export default function RecordPage() {
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [filteredOrders, setFilteredOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
   const [projectFilter, setProjectFilter] = useState<ProjectFilter>("all");
+  const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
+  const [dateFilter, setDateFilter] = useState<DateFilter>("all");
   const [search, setSearch] = useState("");
 
-  // ─── Login ────────────────────────────────────────────────────────────────
+  const [loading, setLoading] = useState(false);
+
+  // ─── LOGIN ─────────────────────────────
   const handleLogin = () => {
     if (password === CORRECT_PASSWORD) {
       setAuthenticated(true);
@@ -424,196 +425,196 @@ export default function RecordPage() {
     }
   };
 
-  // ─── Fetch ────────────────────────────────────────────────────────────────
+  // ─── FETCH ─────────────────────────────
   const fetchOrders = async () => {
-    try {
-      setLoading(true);
-      setError(null);
+    setLoading(true);
 
-      const { data, error: supabaseError } = await cartSupabase
-        .from("soulmate_orders")
-        .select(
-          "full_name, email, phone_number, project_name, date_of_birth, place_of_birth, gender, additional_products, payment_status, created_at"
-        )
-        .order("created_at", { ascending: false });
+    const { data } = await cartSupabase
+      .from("soulmate_orders")
+      .select(
+        "full_name, email, phone_number, project_name, payment_status, created_at"
+      )
+      .order("created_at", { ascending: false });
 
-      if (supabaseError) {
-        setError("Failed to fetch orders: " + supabaseError.message);
-        return;
-      }
-
-      setOrders(data || []);
-    } catch (err: any) {
-      setError("Error fetching orders: " + err.message);
-    } finally {
-      setLoading(false);
-    }
+    setOrders(data || []);
+    setLoading(false);
   };
 
   useEffect(() => {
     if (authenticated) fetchOrders();
   }, [authenticated]);
 
-  // ─── Filters ──────────────────────────────────────────────────────────────
+  // ─── DATE FILTER LOGIC ─────────────────
+  const isWithinDate = (dateStr: string) => {
+    if (dateFilter === "all") return true;
+
+    const date = new Date(dateStr);
+    const now = new Date();
+
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
+    const yesterdayStart = new Date(todayStart);
+    yesterdayStart.setDate(todayStart.getDate() - 1);
+
+    const last7Days = new Date();
+    last7Days.setDate(now.getDate() - 7);
+
+    if (dateFilter === "today") return date >= todayStart;
+    if (dateFilter === "yesterday")
+      return date >= yesterdayStart && date < todayStart;
+    if (dateFilter === "last7days") return date >= last7Days;
+
+    return true;
+  };
+
+  // ─── FILTERS ───────────────────────────
   useEffect(() => {
     let filtered = [...orders];
 
+    // Project filter
     if (projectFilter !== "all") {
       filtered = filtered.filter(
         (o) =>
-          (o.project_name || "").trim().toLowerCase() ===
+          (o.project_name || "").toLowerCase().trim() ===
           projectFilter.toLowerCase()
       );
     }
 
+    // Payment filter
+    if (paymentFilter !== "all") {
+      filtered = filtered.filter(
+        (o) =>
+          (o.payment_status || "").toUpperCase() === paymentFilter
+      );
+    }
+
+    // Date filter
+    filtered = filtered.filter((o) => isWithinDate(o.created_at));
+
+    // Search
     if (search.trim()) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
         (o) =>
-          (o.full_name || "").toLowerCase().includes(q) ||
-          (o.email || "").toLowerCase().includes(q) ||
-          (o.phone_number || "").toLowerCase().includes(q)
+          o.full_name?.toLowerCase().includes(q) ||
+          o.email?.toLowerCase().includes(q) ||
+          o.phone_number?.toLowerCase().includes(q)
       );
     }
 
     setFilteredOrders(filtered);
-  }, [orders, projectFilter, search]);
+  }, [orders, projectFilter, paymentFilter, dateFilter, search]);
 
-  // ─── Helpers ──────────────────────────────────────────────────────────────
   const formatDate = (d: string) =>
-    d ? new Date(d).toLocaleDateString("en-IN") : "—";
+    new Date(d).toLocaleDateString("en-IN");
 
-  const englishCount = orders.filter(
-    (o) =>
-      (o.project_name || "").trim().toLowerCase() ===
-      "english soulmap"
-  ).length;
-
-  const hindiCount = orders.filter(
-    (o) =>
-      (o.project_name || "").trim().toLowerCase() ===
-      "hindi soulmap"
-  ).length;
-
-  // ─── Login Screen ─────────────────────────────────────────────────────────
+  // ─── LOGIN SCREEN ──────────────────────
   if (!authenticated) {
     return (
-      <div className="flex flex-col min-h-dvh bg-background text-foreground">
-        <Header />
-        <main className="flex-1 flex items-center justify-center px-4">
-          <div className="w-full max-w-sm bg-card border border-border rounded-2xl p-8 shadow-sm">
-            <h1 className="text-xl font-semibold mb-1">Admin access</h1>
-            <p className="text-sm text-muted-foreground mb-6">
-              Enter your password to continue
-            </p>
-
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => {
-                setPassword(e.target.value);
-                setLoginError(false);
-              }}
-              onKeyDown={(e) => e.key === "Enter" && handleLogin()}
-              placeholder="••••••••"
-              className="w-full border border-border rounded-lg px-3 py-2 text-sm mb-2"
-            />
-
-            {loginError && (
-              <p className="text-xs text-destructive mb-2">
-                Incorrect password
-              </p>
-            )}
-
-            <button
-              onClick={handleLogin}
-              className="w-full bg-primary text-primary-foreground rounded-lg py-2 text-sm"
-            >
-              Sign in
-            </button>
-          </div>
-        </main>
-        <Footer />
+      <div className="flex items-center justify-center h-screen">
+        <input
+          type="password"
+          placeholder="Enter password"
+          onChange={(e) => setPassword(e.target.value)}
+          className="border p-2 mr-2"
+        />
+        <button onClick={handleLogin}>Login</button>
+        {loginError && <p>Wrong password</p>}
       </div>
     );
   }
 
-  // ─── Dashboard ────────────────────────────────────────────────────────────
+  // ─── UI ────────────────────────────────
   return (
-    <div className="flex flex-col min-h-dvh bg-background text-foreground">
+    <div>
       <Header />
-      <main className="flex-1">
-        <div className="container mx-auto px-4 py-8">
 
-          {/* Title */}
-          <div className="flex justify-between mb-6">
-            <h1 className="text-3xl font-semibold">Order Records</h1>
-            <button onClick={fetchOrders}>↻ Refresh</button>
-          </div>
+      <div className="p-6">
 
-          {/* Filters */}
-          <div className="flex gap-2 mb-4">
-            {(["all", "English Soulmap", "Hindi Soulmap"] as ProjectFilter[]).map(
-              (p) => (
-                <button key={p} onClick={() => setProjectFilter(p)}>
-                  {p}
-                </button>
-              )
-            )}
-          </div>
+        <h1 className="text-2xl font-bold mb-4">Order Records</h1>
 
-          {/* Search */}
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search..."
-            className="border px-2 py-1 mb-4"
-          />
+        {/* FILTERS */}
+        <div className="flex flex-wrap gap-3 mb-4">
 
-          {/* Table */}
-          <table className="w-full text-sm border">
-            <thead>
+          {/* Project */}
+          {["all", "English Soulmap", "Hindi Soulmap"].map((p) => (
+            <button key={p} onClick={() => setProjectFilter(p as any)}>
+              {p}
+            </button>
+          ))}
+
+          {/* Payment */}
+          {["all", "SUCCESS", "PENDING", "FAILED"].map((p) => (
+            <button key={p} onClick={() => setPaymentFilter(p as any)}>
+              {p}
+            </button>
+          ))}
+
+          {/* Date */}
+          {["all", "today", "yesterday", "last7days"].map((d) => (
+            <button key={d} onClick={() => setDateFilter(d as any)}>
+              {d}
+            </button>
+          ))}
+        </div>
+
+        {/* SEARCH */}
+        <input
+          placeholder="Search..."
+          className="border px-2 py-1 mb-4"
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        {/* TABLE */}
+        {loading ? (
+          <p>Loading...</p>
+        ) : (
+          <table className="w-full border rounded-xl overflow-hidden">
+            <thead className="bg-gray-100">
               <tr>
-                <th>Project</th>
-                <th>Name</th>
-                <th>Email</th>
-                <th>Phone</th>
-                <th>Payment</th> {/* ✅ added */}
-                <th>Date</th>
+                <th className="p-3">Project</th>
+                <th className="p-3">Name</th>
+                <th className="p-3">Email</th>
+                <th className="p-3">Phone</th>
+                <th className="p-3">Payment</th>
+                <th className="p-3">Date</th>
               </tr>
             </thead>
 
             <tbody>
-              {filteredOrders.map((order, i) => (
-                <tr key={i}>
-                  <td>{order.project_name}</td>
-                  <td>{order.full_name}</td>
-                  <td>{order.email}</td>
-                  <td>{order.phone_number}</td>
+              {filteredOrders.map((o, i) => (
+                <tr key={i} className="border-t">
+                  <td className="p-3">{o.project_name}</td>
+                  <td className="p-3">{o.full_name}</td>
+                  <td className="p-3">{o.email}</td>
+                  <td className="p-3">{o.phone_number}</td>
 
-                  {/* ✅ Payment Status */}
-                  <td>
+                  <td className="p-3">
                     <span
                       className={clsx(
-                        "px-2 py-1 rounded text-xs",
-                        order.payment_status === "SUCCESS"
+                        "px-3 py-1 rounded-full text-xs font-semibold",
+                        o.payment_status === "SUCCESS"
                           ? "bg-green-100 text-green-700"
-                          : order.payment_status === "FAILED"
+                          : o.payment_status === "FAILED"
                           ? "bg-red-100 text-red-700"
                           : "bg-yellow-100 text-yellow-700"
                       )}
                     >
-                      {order.payment_status || "PENDING"}
+                      {o.payment_status === "SUCCESS"
+                        ? "PAID"
+                        : o.payment_status}
                     </span>
                   </td>
 
-                  <td>{formatDate(order.created_at)}</td>
+                  <td className="p-3">{formatDate(o.created_at)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
-      </main>
+        )}
+      </div>
+
       <Footer />
     </div>
   );
