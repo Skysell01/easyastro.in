@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import OrderConfirmationClient from "./ordertesting";
+import OrderConfirmationTesting from "./ordertesting";
 
 export const dynamic = "force-dynamic";
 
