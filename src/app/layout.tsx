@@ -233,9 +233,11 @@ fbq('track', 'PageView');
         </Script>
 
         {/* ================= noscript fallback ================= */}
-       <noscript><img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=2055279592036652&ev=PageView&noscript=1"
-/></noscript>
+       <noscript
+  dangerouslySetInnerHTML={{
+    __html: `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${PIXEL}&ev=PageView&noscript=1" alt="" />`,
+  }}
+/>
 
         {children}
         <Toaster />
