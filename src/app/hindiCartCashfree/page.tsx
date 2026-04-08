@@ -265,7 +265,8 @@ const createPaymentSession = async () => {
   email: consultationFormData.email?.trim() || `guest${Date.now()}@gmail.com`,
   phoneNumber: consultationFormData.phoneNumber?.replace(/\D/g, "") || "9999999999",
   additional_products: additionalProductsData || [],
-  product_name: "hindi soulmate",
+  product_name: "Soulmate Sketch",
+  projectName: "English Soulmap",  
   url: `${window.location.origin}/order-confirmation-cashfree-hindi`, // ✅ keep as is
 };
 

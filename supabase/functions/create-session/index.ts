@@ -130,29 +130,40 @@ serve(async (req) => {
       email,
       phoneNumber,
       url,
-       projectName,       // ✅ NEW
-      dateOfBirth,     // ✅ NEW
-      placeOfBirth,    // ✅ NEW
-      gender, 
+      projectName, 
+      product_name,
+      dateOfBirth,
+      placeOfBirth,
+      gender,
+      additional_products, // ✅ FIX 1: was used in insert but never destructured
+                
     } = body;
 
     const CASHFREE_APP_ID = Deno.env.get("CASHFREE_APP_ID");
     const CASHFREE_SECRET_KEY = Deno.env.get("CASHFREE_SECRET_KEY");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
     if (!CASHFREE_APP_ID || !CASHFREE_SECRET_KEY) {
       return new Response(
-        JSON.stringify({
-          success: false,
-          error: "Cashfree credentials missing",
-        }),
+        JSON.stringify({ success: false, error: "Cashfree credentials missing" }),
         { status: 500, headers: corsHeaders }
       );
     }
 
-    // ✅ GENERATE YOUR ORDER ID HERE (the missing part)
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      return new Response(
+        JSON.stringify({ success: false, error: "Supabase credentials missing" }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
+
+    // ✅ FIX 3: supabase client was never created
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
     const orderId = `order_${Date.now()}`;
 
-    // 🔥 Create Cashfree Order
+    // Create Cashfree Order
     const response = await fetch("https://api.cashfree.com/pg/orders", {
       method: "POST",
       headers: {
@@ -186,8 +197,8 @@ serve(async (req) => {
       );
     }
 
-     // ✅ INSERT pending order into soulmate_orders
-    await supabase.from("soulmate_orders").insert({
+    // Insert pending order into soulmate_orders
+    const { error: insertError } = await supabase.from("soulmate_orders").insert({
       cashfree_order_id: orderId,
       payment_session_id: data.payment_session_id,
       full_name: fullName,
@@ -195,22 +206,29 @@ serve(async (req) => {
       phone_number: phoneNumber,
       amount: amount,
       additional_products: additional_products || [],
-      project_name: product_name || "Soulmate Sketch",
+      project_name: projectName , // ✅ FIX 4: was `product_name`, now matches destructured `projectName`
       date_of_birth: dateOfBirth || null,
       place_of_birth: placeOfBirth || null,
       gender: gender || null,
       payment_status: "pending",
       status: "created",
     });
-    
+
+    if (insertError) {
+      console.error("Supabase insert error:", insertError);
+      return new Response(
+        JSON.stringify({ success: false, error: insertError.message }),
+        { status: 500, headers: corsHeaders }
+      );
+    }
 
     return new Response(
       JSON.stringify({
         success: true,
         data: {
           payment_session_id: data.payment_session_id,
-          order_id: orderId, // ✅ NOW VALID
-          language: language || "english", 
+          order_id: orderId,
+          language: language || "english",
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -218,12 +236,8 @@ serve(async (req) => {
 
   } catch (err: any) {
     console.error("Create session error:", err);
-
     return new Response(
-      JSON.stringify({
-        success: false,
-        error: err.message,
-      }),
+      JSON.stringify({ success: false, error: err.message }),
       { status: 500, headers: corsHeaders }
     );
   }
