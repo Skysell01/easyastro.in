@@ -306,7 +306,7 @@ const createPaymentSession = async () => {
       phoneNumber: orderData.phone_number,
       additional_products: additionalProductsData,
       product_name: "Soulmate Sketch",
-      url: `${window.location.origin}/order-confirmation`,
+      url: `${window.location.origin}/order-confirmation-cashfree`,
     };
 
     // ✅ Save locally
