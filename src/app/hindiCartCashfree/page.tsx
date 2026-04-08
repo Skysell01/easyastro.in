@@ -17,7 +17,7 @@ const mockCartItems = [
     id: "1",
     name: "Soulmate Sketch",
     description: "सोलमेट स्केच + मुफ़्त लव रिपोर्ट",
-    price: 2,
+    price: 199,
     originalPrice: 1999,
     features: [
       "आपके लिए बनाया गया पर्सनल हैंड-ड्रॉन स्केच",
