@@ -26,8 +26,7 @@ export const metadata: Metadata = {
     "Discover your soulmate's face today with a personalized sketch from our gifted psychics.",
 };
 
-// Prefer env, fallback to your ID
-const PIXEL = process.env.NEXT_PUBLIC_META_PIXEL_ID || "2055279592036652";
+
 
 export default function RootLayout({
   children,
@@ -52,7 +51,7 @@ n.queue=[];t=b.createElement(e);t.async=!0;
 t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
-fbq('init', '${PIXEL}');
+fbq('init', '2055279592036652');
 fbq('track', 'PageView');
             })();
           `}
