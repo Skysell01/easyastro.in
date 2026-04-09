@@ -78,6 +78,21 @@ export default function OrderConfirmationClient({ orderId: paramOrderId }: { ord
 
   // SUCCESS UI
   return (
+
+      <>
+    {status === "success" && (
+      <Script id="fb-purchase" strategy="afterInteractive">
+        {`
+          if (typeof fbq !== 'undefined') {
+            fbq('track', 'Purchase', {
+              value: ${amount},
+              currency: 'INR'
+            });
+          }
+        `}
+      </Script>
+    )}
+    
     <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-yellow-50 to-orange-50 px-4">
       <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
         <CheckCircle className="w-20 h-20 text-green-500 mx-auto mb-4" />
@@ -107,5 +122,6 @@ export default function OrderConfirmationClient({ orderId: paramOrderId }: { ord
         </button>
       </div>
     </div>
+    </>
   );
 }
