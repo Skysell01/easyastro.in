@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, Loader2 } from "lucide-react";
+import Script from "next/script";
 
 const FUNCTIONS_URL = process.env.NEXT_PUBLIC_SUPABASE_FUNCTIONS_URL!;
 
@@ -34,37 +35,92 @@ export default function OrderConfirmationHindi({ orderId: paramOrderId }: { orde
     verify();
   }, [orderId]);
 
-  async function verify() {
-    try {
-      setStatus("verifying");
+  // async function verify() {
+  //   try {
+  //     setStatus("verifying");
 
-      const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" ,
-          "Authorization": `Bearer ${process.env.NEXT_PUBLIC_MAIN_SUPABASE_ANON_KEY}`,
-         },
+  //     const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
+  //       method: "POST",
+  //       headers: { "Content-Type": "application/json" ,
+  //         "Authorization": `Bearer ${process.env.NEXT_PUBLIC_MAIN_SUPABASE_ANON_KEY}`,
+  //        },
         
+  //       body: JSON.stringify({ orderId }),
+  //     });
+
+  //     const data = await res.json();
+  //     console.log("Verify response:", data);
+
+  //     if (data?.payment_status === "SUCCESS") {
+  //       setStatus("success");
+  //       localStorage.removeItem("pendingOrderId");
+  //       localStorage.removeItem("orderData");
+  //     } else {
+  //       // ❌ Failed or Pending → redirect to cart with failure flag
+  //       localStorage.setItem("paymentFailed", "true");
+  //       router.replace("/cart-cashfree");
+  //     }
+  //   } catch (err) {
+  //     localStorage.setItem("paymentFailed", "true");
+  //     router.replace("/cart-cashfree");
+  //   }
+  // }
+async function verify() {
+  try {
+    setStatus("verifying");
+
+    const res = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NEXT_PUBLIC_MAIN_SUPABASE_ANON_KEY}`,
+      },
+      body: JSON.stringify({ orderId }),
+    });
+
+    const data = await res.json();
+    console.log("Verify response:", data);
+
+    if (data?.payment_status === "SUCCESS") {
+      setStatus("success");
+      localStorage.removeItem("pendingOrderId");
+      localStorage.removeItem("orderData");
+
+    } else if (data?.payment_status === "PENDING") {
+      // ✅ Don't redirect immediately — Cashfree may still be processing
+      // Wait 5 seconds and retry once more
+      await new Promise((r) => setTimeout(r, 5000));
+      const retryRes = await fetch(`${FUNCTIONS_URL}/verify-payment`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_MAIN_SUPABASE_ANON_KEY}`,
+        },
         body: JSON.stringify({ orderId }),
       });
+      const retryData = await retryRes.json();
 
-      const data = await res.json();
-      console.log("Verify response:", data);
-
-      if (data?.payment_status === "SUCCESS") {
+      if (retryData?.payment_status === "SUCCESS") {
         setStatus("success");
         localStorage.removeItem("pendingOrderId");
         localStorage.removeItem("orderData");
       } else {
-        // ❌ Failed or Pending → redirect to cart with failure flag
+        // Still not paid after retry → redirect
         localStorage.setItem("paymentFailed", "true");
         router.replace("/cart-cashfree");
       }
-    } catch (err) {
+
+    } else {
+      // FAILED
       localStorage.setItem("paymentFailed", "true");
       router.replace("/cart-cashfree");
     }
-  }
 
+  } catch (err) {
+    localStorage.setItem("paymentFailed", "true");
+    router.replace("/cart-cashfree");
+  }
+}
   // VERIFYING UI
   if (status === "verifying") {
     return (
