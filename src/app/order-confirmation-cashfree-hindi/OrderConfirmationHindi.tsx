@@ -107,18 +107,18 @@ async function verify() {
       } else {
         // Still not paid after retry → redirect
         localStorage.setItem("paymentFailed", "true");
-        router.replace("/cart-cashfree");
+        router.replace("/hindiCartCashfree");
       }
 
     } else {
       // FAILED
       localStorage.setItem("paymentFailed", "true");
-      router.replace("/cart-cashfree");
+      router.replace("/hindiCartCashfree");
     }
 
   } catch (err) {
     localStorage.setItem("paymentFailed", "true");
-    router.replace("/cart-cashfree");
+    router.replace("/hindiCartCashfree");
   }
 }
   // VERIFYING UI
