@@ -35,6 +35,19 @@ export default function OrderConfirmationClient({ orderId: paramOrderId }: { ord
     verify();
   }, [orderId]);
 
+
+  useEffect(() => {
+  if (!window.__purchaseTracked) {
+    window.metaTrack("Purchase", {
+      value: 199,
+      currency: "INR"
+    });
+
+    window.__purchaseTracked = true;
+  }
+}, []);
+
+
   // async function verify() {
   //   try {
   //     setStatus("verifying");
