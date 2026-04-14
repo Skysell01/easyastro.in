@@ -35,16 +35,7 @@ export default function OrderConfirmationHindi({ orderId: paramOrderId }: { orde
     verify();
   }, [orderId]);
 
-  useEffect(() => {
-  if (!window.__purchaseTracked) {
-    window.metaTrack("Purchase", {
-      value: 199,
-      currency: "INR"
-    });
-
-    window.__purchaseTracked = true;
-  }
-}, []);
+ 
 
   // async function verify() {
   //   try {
