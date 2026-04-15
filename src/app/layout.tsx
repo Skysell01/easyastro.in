@@ -40,7 +40,7 @@ export default function RootLayout({
     >
       <body className="font-body antialiased">
         {/* ================= META PIXEL ================= */}
-        <Script id="meta-pixel-base" strategy="afterInteractive">
+        {/* <Script id="meta-pixel-base" strategy="afterInteractive">
           {`
             (function(){
              !function(f,b,e,v,n,t,s)
@@ -52,11 +52,11 @@ t.src=v;s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s)}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 fbq('init', '2055279592036652');
- fbq('track', 'PageView');
+
 
             })();
           `}
-        </Script>
+        </Script> */}
         
 
 
@@ -171,17 +171,22 @@ fbq('init', '2055279592036652');
                   var eventId = uuid();
 
                   // 1) Browser event (Pixel)
-                  if (window.fbq) {
-                    window.fbq('track', eventName, customData || {}, { eventID: eventId });
-                  }
+                  // if (window.fbq) {
+                  //   window.fbq('track', eventName, customData || {}, { eventID: eventId });
+                  // }
+                   if (window.fbq) {
+      window.fbq('track', eventName, customData || {}, { eventID: eventId });
+    }
 
                   // 2) Server event (CAPI) with same event_id for dedup
+                  // var fbp = getCookie("_fbp");
+                  // var fbc = getCookie("_fbc");
                   var fbp = getCookie("_fbp");
-                  var fbc = getCookie("_fbc");
+    var fbc = getCookie("_fbc");
 
                   var payload = {
                     event_name: eventName,
-                    event_id: eventId,
+                     event_id: eventId, 
                     action_source: "website",
                     event_source_url: window.location.href,
                     custom_data: customData || {},
