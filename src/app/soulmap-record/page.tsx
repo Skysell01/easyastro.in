@@ -333,7 +333,6 @@ export default function RecordPage() {
   const [search, setSearch] = useState("");
   const [paymentFilter, setPaymentFilter] = useState<PaymentFilter>("all");
 
-  // ✅ Date filter state
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
 
@@ -378,19 +377,16 @@ export default function RecordPage() {
   useEffect(() => {
     let filtered = [...orders];
 
-    // Project filter
     if (projectFilter !== "all") {
       filtered = filtered.filter((o) => o.project_name === projectFilter);
     }
 
-    // Payment filter
     if (paymentFilter !== "all") {
       filtered = filtered.filter(
         (o) => (o.payment_status || "").toLowerCase() === paymentFilter
       );
     }
 
-    // ✅ Date range filter
     if (dateFrom) {
       const from = new Date(dateFrom);
       from.setHours(0, 0, 0, 0);
@@ -402,7 +398,6 @@ export default function RecordPage() {
       filtered = filtered.filter((o) => new Date(o.created_at) <= to);
     }
 
-    // Search filter
     if (search.trim()) {
       const q = search.toLowerCase();
       filtered = filtered.filter(
@@ -419,14 +414,57 @@ export default function RecordPage() {
   const formatDate = (d: string) =>
     d ? new Date(d).toLocaleDateString("en-IN") : "—";
 
-  const englishCount = orders.filter(
-    (o) => o.project_name === "English Soulmap"
-  ).length;
-  const hindiCount = orders.filter(
-    (o) => o.project_name === "Hindi Soulmap"
-  ).length;
+  // ✅ CSV Export function
+  const exportToCSV = () => {
+    const headers = [
+      "Project",
+      "Full Name",
+      "Email",
+      "Phone",
+      "Payment Status",
+      "Gender",
+      "Date of Birth",
+      "Place of Birth",
+      "Add-ons",
+      "Order Date",
+    ];
 
-  // ✅ Clear date filters
+    const escapeCSV = (value: string) => {
+      if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+        return `"${value.replace(/"/g, '""')}"`;
+      }
+      return value;
+    };
+
+    const rows = filteredOrders.map((order) => [
+      escapeCSV(order.project_name || ""),
+      escapeCSV(order.full_name || ""),
+      escapeCSV(order.email || ""),
+      escapeCSV(order.phone_number || ""),
+      escapeCSV(order.payment_status || ""),
+      escapeCSV(order.gender || ""),
+      escapeCSV(order.date_of_birth || ""),
+      escapeCSV(order.place_of_birth || ""),
+      escapeCSV((order.additional_products || []).join("; ")),
+      escapeCSV(formatDate(order.created_at)),
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+
+    const today = new Date().toISOString().slice(0, 10);
+    link.download = `orders_${today}.csv`;
+
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const clearDateFilter = () => {
     setDateFrom("");
     setDateTo("");
@@ -494,12 +532,28 @@ export default function RecordPage() {
                 {orders.length} total orders · {filteredOrders.length} shown
               </p>
             </div>
-            <button
-              onClick={fetchOrders}
-              className="px-4 py-1.5 rounded-full border border-border text-sm bg-muted hover:bg-muted/70 transition"
-            >
-              ↻ Refresh
-            </button>
+
+            {/* ✅ Action buttons */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={fetchOrders}
+                className="px-4 py-1.5 rounded-full border border-border text-sm bg-muted hover:bg-muted/70 transition"
+              >
+                ↻ Refresh
+              </button>
+              <button
+                onClick={exportToCSV}
+                disabled={filteredOrders.length === 0}
+                className={clsx(
+                  "px-4 py-1.5 rounded-full border text-sm font-medium transition flex items-center gap-1.5",
+                  filteredOrders.length === 0
+                    ? "border-border bg-muted text-muted-foreground cursor-not-allowed opacity-50"
+                    : "border-green-500 bg-green-500 text-white hover:bg-green-600 hover:border-green-600"
+                )}
+              >
+                ↓ Export CSV
+              </button>
+            </div>
           </div>
 
           {/* Project Filter */}
@@ -548,7 +602,7 @@ export default function RecordPage() {
             ))}
           </div>
 
-          {/* ✅ Date Range Filter */}
+          {/* Date Range Filter */}
           <div className="flex flex-wrap gap-3 items-center mb-4">
             <span className="text-xs text-muted-foreground">Date:</span>
             <div className="flex items-center gap-2 flex-wrap">
@@ -570,7 +624,6 @@ export default function RecordPage() {
                   className="border border-border rounded-lg px-2 py-1 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary/40"
                 />
               </div>
-              {/* ✅ Clear button — only shows when a date is selected */}
               {(dateFrom || dateTo) && (
                 <button
                   onClick={clearDateFilter}

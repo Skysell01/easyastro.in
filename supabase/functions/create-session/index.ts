@@ -189,6 +189,8 @@ serve(async (req) => {
     });
 
     const data = await response.json();
+    console.log("Cashfree response status:", response.status);
+console.log("Cashfree error response:", JSON.stringify(data));
 
     if (!data.payment_session_id) {
       return new Response(
