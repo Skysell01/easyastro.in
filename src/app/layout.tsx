@@ -80,7 +80,7 @@ fbq('track', 'PageView', {}, { eventID: pvId });
         
 
         {/* ========== SPA PAGEVIEW TRACKER (deduped) ========== */}
-        {/* <Script id="meta-pixel-spa-pageview" strategy="afterInteractive">
+        <Script id="meta-pixel-spa-pageview" strategy="afterInteractive">
           {`
             (function () {
               function safeTrack() {
@@ -124,10 +124,10 @@ fbq('track', 'PageView', {}, { eventID: pvId });
               init(0);
             })();
           `}
-        </Script> */}
+        </Script>
 
         {/* ================= CAPI HELPER (server call) ================= */}
-        <Script id="meta-capi-helper" strategy="afterInteractive">
+        {/* <Script id="meta-capi-helper" strategy="afterInteractive">
           {`
             (function () {
               function getCookie(name) {
@@ -252,7 +252,7 @@ fbq('track', 'PageView', {}, { eventID: pvId });
               })();
             })();
           `}
-        </Script>
+        </Script> */}
 
         {/* ================= noscript fallback ================= */}
        <noscript><img height="1" width="1" style={{display:"none"}}
