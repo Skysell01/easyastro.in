@@ -65,7 +65,9 @@ export default function SpecialOfferPopup({ isOpen, onClose }: SpecialOfferPopup
 
   const handleGetSoulmateSketch = () => {
     onClose();
-    router.push('/cart-cashfree');
+    // router.push('/cart-cashfree');
+     window.location.href =
+    "https://superprofile.bio/vp/custom-soul-mate-sketch---free-love-report-%F0%9F%98%B3?checkout=true";
   };
 
   useEffect(() => {

@@ -32,8 +32,11 @@ const stats = [
 export default function HeroSection() {
    const router = useRouter();
   const handleRedirect = () => {
-    router.push('/cart-cashfree');
-  };
+    //  
+  window.location.href =
+    "https://superprofile.bio/vp/custom-soul-mate-sketch---free-love-report-%F0%9F%98%B3?checkout=true";
+};
+  
   return (
     <section className="relative overflow-hidden pt-2 pb-7 sm:py-16 bg-card">
       <div className="absolute inset-0 bg-gradient-to-b from-background via-transparent to-background opacity-50"></div>
