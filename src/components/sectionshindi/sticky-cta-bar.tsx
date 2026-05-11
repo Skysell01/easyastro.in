@@ -14,7 +14,9 @@ export default function StickyCtaBar() {
   const router = useRouter();
 
   const handleRedirect = () => {
-    router.push('/hindiCartCashfree');
+    // router.push('/hindiCartCashfree');
+     window.location.href =
+    "https://superprofile.bio/vp/custom-soul-mate-sketch---free-love-report-%F0%9F%98%B3?checkout=true";
   };
 
   useEffect(() => {
