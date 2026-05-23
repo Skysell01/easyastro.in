@@ -11,11 +11,11 @@ export default function StickyCtaBar() {
   const [offerEndTime, setOfferEndTime] = useState<Date | null>(null);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [popupHasBeenShown, setPopupHasBeenShown] = useState(false);
-   const router = useRouter();
+  const router = useRouter();
   const handleRedirect = () => {
     // router.push('/cart-cashfree');
-     window.location.href =
-    "https://superprofile.bio/vp/custom-soul-mate-sketch---free-love-report-%F0%9F%98%B3?checkout=true";
+    window.location.href =
+      "https://superprofile.bio/vp/custom-soul-mate-sketch---free-love-report-%F0%9F%98%B3?checkout=true";
   };
   useEffect(() => {
     // This runs only on the client
@@ -58,14 +58,14 @@ export default function StickyCtaBar() {
             </div>
             <div className="hidden sm:flex items-baseline gap-3">
               <span className="text-2xl text-muted-foreground line-through">₹998</span>
-              <span className="text-4xl font-bold text-primary">₹199</span>
+              <span className="text-4xl font-bold text-primary">₹249</span>
             </div>
           </div>
-          
+
           <a href={process.env.NEXT_PUBLIC_CTA_URL} className="w-auto shrink-0">
-            <Button 
-               onClick={handleRedirect}
-            size="lg" className="w-full font-bold text-base sm:text-lg py-3 sm:py-6 px-4 sm:px-6 animate-shine text-center">
+            <Button
+              onClick={handleRedirect}
+              size="lg" className="w-full font-bold text-base sm:text-lg py-3 sm:py-6 px-4 sm:px-6 animate-shine text-center">
               Reveal My Soulmate
             </Button>
           </a>
